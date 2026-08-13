@@ -1,0 +1,251 @@
+/* judasaca.art — the art carries the colour, the site stays out of the way.
+   White paper, black ink, and a lot of air. The only thing on the page that
+   should shout is the painting. */
+
+:root{
+  --tinta:#0B0B0B; --gris:#6B6B6B; --tenue:#707070; --linea:#E6E6E6;
+  --papel:#FFFFFF; --humo:#F6F5F3;
+  --max:1280px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+  color:var(--tinta);background:var(--papel);font-size:16px;line-height:1.6;
+  -webkit-font-smoothing:antialiased}
+img{max-width:100%;height:auto;display:block}
+a{color:inherit}
+
+.wrap{max-width:var(--max);margin:0 auto;padding:0 28px}
+.estrecho{max-width:760px}
+
+/* ── barra ── */
+header{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.95);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--linea)}
+.barra{max-width:var(--max);margin:0 auto;height:54px;padding:0 14px;
+  display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
+.marca{justify-self:center;align-self:center;display:block;width:40px;line-height:0}
+.marca img{width:100%}
+
+/* Las tres rayas, pintadas a mano: son trazos de pincel, no lineas rectas.
+   Es el unico guino de su estilo que se permite la interfaz. */
+.trazo{justify-self:start;align-self:center;background:none;border:0;cursor:pointer;
+  padding:8px;color:var(--tinta);display:flex;align-items:center;justify-content:center;
+  line-height:0;height:38px}
+.trazo svg{width:21px;height:15px;stroke:currentColor;fill:none;stroke-width:2.6;
+  stroke-linecap:round;display:block}
+.trazo:hover{opacity:.6}
+
+/* ── menu en panel, entra por la izquierda ── */
+.menu-panel{position:fixed;top:0;left:0;bottom:0;width:min(340px,86vw);background:#fff;
+  z-index:130;transform:translateX(-102%);transition:transform .32s cubic-bezier(.2,.7,.2,1);
+  display:flex;flex-direction:column;padding:26px 30px;box-shadow:8px 0 40px rgba(0,0,0,.10)}
+.menu-panel.abierto{transform:none}
+.menu-panel .x{align-self:flex-end;background:none;border:0;font-size:28px;line-height:1;
+  cursor:pointer;color:var(--tinta);padding:2px 4px 14px}
+nav{display:flex;flex-direction:column;gap:0}
+nav a{font-size:15px;letter-spacing:1.4px;text-transform:uppercase;text-decoration:none;
+  color:var(--tinta);padding:15px 0;border-bottom:1px solid var(--linea)}
+nav a:hover{color:var(--gris)}
+nav a.on{color:var(--gris)}
+.menu-panel .abajo{margin-top:auto;padding-top:24px;font-size:12.5px;color:var(--tenue);
+  line-height:1.7}
+.menu-panel .abajo a{color:var(--tenue);text-decoration:none;border-bottom:1px solid var(--linea)}
+.menu-panel .abajo a:hover{color:var(--tinta)}
+
+/* ── carrito ── */
+.carro{justify-self:end;align-self:center;display:flex;align-items:center;justify-content:center;
+  gap:5px;background:none;border:0;cursor:pointer;color:var(--tinta);padding:8px;
+  font-size:12.5px;height:38px}
+.carro:hover{opacity:.6}
+.carro svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;display:block}
+.carro .n{font-variant-numeric:tabular-nums;min-width:12px;text-align:left}
+.velo{position:fixed;inset:0;background:rgba(11,11,11,.38);z-index:120;display:none}
+.velo.abierto{display:block}
+.panel{position:fixed;top:0;right:0;bottom:0;width:min(420px,92vw);background:#fff;z-index:130;
+  transform:translateX(102%);transition:transform .32s cubic-bezier(.2,.7,.2,1);
+  display:flex;flex-direction:column;box-shadow:-8px 0 40px rgba(0,0,0,.12)}
+.panel.abierto{transform:none}
+.panel .alto{display:flex;align-items:center;justify-content:space-between;
+  padding:24px 26px;border-bottom:1px solid var(--linea)}
+.panel .alto h2{font-size:13px;letter-spacing:2.6px;text-transform:uppercase;font-weight:700}
+.panel .x{background:none;border:0;font-size:26px;line-height:1;cursor:pointer;color:var(--tinta);padding:4px}
+.panel .lista{flex:1;overflow-y:auto;padding:8px 26px}
+.panel .vacio{color:var(--tenue);font-size:14.5px;padding:34px 0;text-align:center}
+.item{display:flex;gap:14px;padding:18px 0;border-bottom:1px solid var(--linea);align-items:flex-start}
+.item img{width:62px;height:62px;object-fit:cover;flex-shrink:0;background:var(--humo)}
+.item .d{flex:1;min-width:0}
+.item .t{font-size:14px;font-weight:600;line-height:1.3}
+.item .f{font-size:12px;color:var(--tenue);margin-top:2px}
+.item .p{font-size:13.5px;font-weight:600;margin-top:5px}
+.item .quitar{background:none;border:0;color:var(--tenue);font-size:11.5px;letter-spacing:1.2px;
+  text-transform:uppercase;cursor:pointer;padding:6px 0 0;text-decoration:underline}
+.item .quitar:hover{color:var(--tinta)}
+.panel .bajo{border-top:1px solid var(--linea);padding:22px 26px 28px}
+.panel .total{display:flex;justify-content:space-between;font-size:15px;font-weight:600;
+  margin-bottom:16px}
+.panel .bajo .btn{display:block;text-align:center;width:100%}
+.panel .nota{font-size:12px;color:var(--tenue);margin-top:12px;line-height:1.5}
+
+/* ── portada ── */
+.hero{padding:40px 0 4px;text-align:center}
+.hero .lema{font-size:12px;letter-spacing:4px;text-transform:uppercase;color:var(--tenue)}
+.hero h1{font-size:clamp(30px,6.4vw,66px);font-weight:800;letter-spacing:-1.6px;
+  line-height:1;margin:0 0 10px}
+.hero p{color:var(--gris);max-width:620px;margin:0 auto;font-size:17px}
+
+.portada-obra{margin:52px 0 0}
+.portada-obra img{width:100%}
+.pie-obra{font-size:12.5px;color:var(--tenue);letter-spacing:.4px;margin-top:12px;text-align:center}
+
+/* ── titulares de seccion ── */
+.tit{margin:0 0 34px}
+.tit .eti{font-size:11.5px;letter-spacing:3.4px;text-transform:uppercase;color:var(--tenue);
+  margin-bottom:12px}
+.tit h2{font-size:clamp(26px,3.6vw,40px);font-weight:800;letter-spacing:-1px;line-height:1.1}
+.tit p{color:var(--gris);max-width:640px;margin-top:12px}
+section{padding:74px 0}
+section.humo{background:var(--humo)}
+
+/* ── rejilla de obras ── */
+.obras{display:grid;grid-template-columns:repeat(3,1fr);gap:38px 30px}
+.obra figure{margin:0}
+.obra .marco{background:var(--humo);overflow:hidden;display:block;
+  aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;padding:22px}
+.obra img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;
+  transition:transform .6s cubic-bezier(.2,.6,.2,1)}
+.obra:hover img{transform:scale(1.035)}
+.obra figcaption{padding-top:15px;text-align:center}
+.obra .linea{font-size:14px;line-height:1.5}
+.obra .linea .t{font-weight:600}
+.obra .linea .f{color:var(--tenue)}
+.obra .linea .p{font-weight:600}
+.obra .linea .vendida{color:var(--tenue);font-weight:400}
+.acciones{display:flex;gap:10px;margin-top:13px;flex-wrap:wrap;justify-content:center}
+.btn{display:inline-block;font-size:11.5px;letter-spacing:1.6px;text-transform:uppercase;
+  text-decoration:none;padding:10px 20px;border:1px solid var(--tinta);color:var(--tinta);
+  background:none;cursor:pointer;transition:background .2s,color .2s}
+.btn:hover{background:var(--tinta);color:#fff}
+.btn.lleno{background:var(--tinta);color:#fff}
+.btn.lleno:hover{background:#333}
+
+/* ── franja de realidad aumentada ── */
+.ar{background:var(--tinta);color:#fff;padding:74px 0}
+.ar .eti{color:#8E8E8E}
+.ar h2{color:#fff}
+.ar p{color:#B9B9B9;max-width:640px}
+.ar .caja{margin-top:34px;border:1px solid #262626;background:#111;padding:48px 32px;
+  text-align:center;border-radius:2px}
+.ar .caja .frase{font-size:clamp(20px,3vw,30px);font-weight:700;letter-spacing:-.5px;color:#fff}
+.ar .caja .sub{color:#8E8E8E;font-size:14px;margin-top:10px}
+.ar .btn{border-color:#fff;color:#fff;margin-top:24px}
+.ar .btn:hover{background:#fff;color:var(--tinta)}
+
+/* ── texto largo ── */
+.prosa p{margin-bottom:20px;font-size:17px}
+.prosa p.entrada{font-size:20px;color:var(--tinta)}
+.prosa h3{font-size:19px;font-weight:700;margin:34px 0 12px}
+.cita{border-left:2px solid var(--tinta);padding-left:22px;margin:30px 0;font-size:19px;
+  line-height:1.5}
+.cita cite{display:block;font-size:13px;color:var(--tenue);font-style:normal;margin-top:10px;
+  letter-spacing:.4px}
+
+.retrato{width:100%}
+.dos{display:grid;grid-template-columns:1fr 1.15fr;gap:52px;align-items:start}
+
+/* ── prensa ── */
+.prensa{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:8px}
+.prensa a{display:block;border:1px solid var(--linea);padding:22px 24px;text-decoration:none;
+  transition:border-color .2s}
+.prensa a:hover{border-color:var(--tinta)}
+.prensa .medio{font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:var(--tenue)}
+.prensa .titular{font-size:15.5px;font-weight:600;margin-top:7px;line-height:1.35}
+
+/* ── hoja de vida ── */
+.cv{border-top:1px solid var(--linea)}
+.cv .anio{display:grid;grid-template-columns:110px 1fr;gap:24px;padding:26px 0;
+  border-bottom:1px solid var(--linea)}
+.cv .anio h3{font-size:22px;font-weight:800;letter-spacing:-.5px}
+.cv ul{list-style:none}
+.cv li{padding:7px 0;font-size:15.5px;display:flex;gap:12px;flex-wrap:wrap}
+.cv li .lugar{color:var(--tenue);font-size:14px}
+.cv li .premio{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;
+  border:1px solid var(--tinta);padding:2px 8px;align-self:center}
+
+/* ── datos sueltos ── */
+.datos{display:grid;grid-template-columns:repeat(4,1fr);gap:28px;margin-top:8px}
+.dato .n{font-size:34px;font-weight:800;letter-spacing:-1.4px;line-height:1}
+.dato .l{font-size:13px;color:var(--tenue);margin-top:6px}
+
+/* ── tienda ── */
+.pronto{border:1px dashed var(--tenue);padding:56px 34px;text-align:center}
+.pronto h3{font-size:clamp(22px,3vw,30px);font-weight:800;letter-spacing:-.8px}
+.pronto p{color:var(--gris);max-width:520px;margin:14px auto 0}
+
+/* ── contacto ── */
+.contacto a.correo{font-size:clamp(22px,4vw,38px);font-weight:700;letter-spacing:-1px;
+  text-decoration:none;border-bottom:2px solid var(--tinta);padding-bottom:2px;
+  display:inline-block;word-break:break-all}
+.enlaces{display:flex;gap:22px;flex-wrap:wrap;margin-top:30px}
+.enlaces a{font-size:12px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gris);
+  text-decoration:none;border-bottom:1px solid var(--linea);padding-bottom:3px}
+.enlaces a:hover{color:var(--tinta);border-bottom-color:var(--tinta)}
+
+/* ── pie ── */
+footer{border-top:1px solid var(--linea);padding:46px 0 60px;margin-top:20px}
+.pie{display:flex;gap:30px;flex-wrap:wrap;align-items:flex-start}
+.pie .col{font-size:13.5px;color:var(--gris)}
+.pie .col b{display:block;color:var(--tinta);font-size:11px;letter-spacing:2.4px;
+  text-transform:uppercase;margin-bottom:10px}
+.pie a{text-decoration:none;color:var(--gris);display:block;padding:3px 0}
+.pie a:hover{color:var(--tinta)}
+.pie .fin{margin-left:auto;text-align:right;font-size:12px;color:var(--tenue)}
+
+@media(max-width:980px){
+  .obras{grid-template-columns:repeat(2,1fr)}
+  .dos{grid-template-columns:1fr;gap:34px}
+  .datos{grid-template-columns:repeat(2,1fr)}
+  .prensa{grid-template-columns:1fr}
+}
+@media(max-width:680px){
+  .wrap{padding:0 20px}
+  .barra{padding:15px 20px}
+  .obras{grid-template-columns:repeat(2,1fr);gap:26px 14px}
+  .obra .marco{padding:12px}
+  .obra .linea{font-size:12.5px;line-height:1.45}
+  .obra figcaption{padding-top:11px}
+  .acciones{gap:6px;margin-top:10px}
+  .acciones .btn{font-size:10px;padding:8px 11px;letter-spacing:1.1px}
+  .datos{grid-template-columns:1fr;gap:20px}
+  .cv .anio{grid-template-columns:1fr;gap:8px}
+  section{padding:54px 0}
+  .pie .fin{margin-left:0;text-align:left;width:100%}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto}}
+
+/* ── lupa de obras ── */
+.lupa{position:fixed;inset:0;z-index:200;background:rgba(11,11,11,.96);
+  display:none;align-items:center;justify-content:center;padding:64px 22px}
+.lupa.viendo{display:flex}
+.lupa figure{margin:0;max-width:min(1100px,92vw);text-align:center}
+.lupa img{max-width:100%;max-height:78vh;width:auto;margin:0 auto}
+.lupa figcaption{color:#B9B9B9;font-size:13px;letter-spacing:.4px;margin-top:16px}
+.lupa .cerrar,.lupa .pasar{position:absolute;background:none;border:0;color:#fff;
+  cursor:pointer;line-height:1;padding:14px}
+.lupa .cerrar{top:14px;right:18px;font-size:34px}
+.lupa .pasar{top:50%;transform:translateY(-50%);font-size:46px}
+.lupa .ant{left:8px} .lupa .sig{right:8px}
+.lupa .cerrar:hover,.lupa .pasar:hover{color:#B9B9B9}
+.obra .marco{display:block;cursor:zoom-in}
+@media(max-width:680px){.lupa{padding:56px 12px}.lupa .pasar{font-size:34px;padding:8px}}
+
+/* ── portada, al estilo de la referencia: titulo, una obra, y ya ── */
+.hero h1{font-style:italic}
+.portada-obra{max-width:380px;margin:26px auto 0}
+.portada-obra a{display:block;cursor:zoom-in}
+.entrada-home{max-width:620px;margin:52px auto 0;text-align:center;padding-bottom:16px}
+.entrada-home p{color:var(--gris);font-size:17px;margin-bottom:26px}
+@media(max-width:680px){
+  .marca{width:36px}
+  .barra{padding:0 10px}
+  .portada-obra{margin-top:20px}
+}
