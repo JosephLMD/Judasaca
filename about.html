@@ -11,7 +11,7 @@
 <meta property="og:title" content="About · JUDASACA · Juan Salazar">
 <meta property="og:description" content="Juan Salazar, known as JUDASACA, is a Colombian hybrid artist working between traditional painting and augmented reality.">
 <meta property="og:url" content="https://judasaca.art/about.html">
-<meta property="og:image" content="https://judasaca.art/img/juan-salazar.webp">
+<meta property="og:image" content="https://judasaca.art/img/about_photo.jpeg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="img/judasaca-logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -51,7 +51,7 @@
   </nav>
   <div class="abajo">
     Bogotá, Colombia<br>
-    <a href="mailto:judasaca.art@gmail.com">judasaca.art@gmail.com</a><br>
+    <a href="mailto:contact@judasaca.art">contact@judasaca.art</a><br>
     <a href="https://www.instagram.com/judasaca" rel="noopener">@judasaca</a>
   </div>
 </aside>
@@ -59,15 +59,17 @@
 <main>
   <section>
     <div class="wrap">
-      <div class="tit"><div class="eti">About</div><h2>Juan Salazar</h2></div>
+      <div class="tit centrado"><div class="eti">About</div><h2>Juan Salazar</h2></div>
       <div class="dos">
-        <div>
-          <img class="retrato" src="img/juan-salazar.webp" width="1100" height="1471"
-               alt="Juan Salazar, JUDASACA, in Bogotá">
+        <!-- La foto se queda quieta mientras el texto corre. -->
+        <div class="foto">
+          <img class="retrato" src="about_photo.jpeg"
+               alt="Juan Salazar painting a mural, Bogotá">
+          <figcaption class="pie-foto">Studio, Bogotá</figcaption>
         </div>
-        <div class="prosa">
+        <div class="prosa vida">
           <p class="entrada">JUDASACA is a hybrid artist. He paints on canvas, and then
-            he lets the painting move.</p>
+            <span class="mueve">he lets the painting move.</span></p>
 
           <p>Juan Salazar spent more than fifteen years in marketing and international
             business before art became the work rather than the thing beside it. His
@@ -141,7 +143,7 @@
     <div class="col"><b>Studio</b>
       <a href="about.html">About the artist</a>
       <a href="contact.html">Contact</a>
-      <a href="mailto:judasaca.art@gmail.com">judasaca.art@gmail.com</a>
+      <a href="mailto:contact@judasaca.art">contact@judasaca.art</a>
     </div>
     <div class="col"><b>Follow</b>
       <a href="https://www.instagram.com/judasaca" rel="noopener">Instagram · @judasaca</a>
@@ -272,7 +274,7 @@
     var cuerpo = 'Hi Juan, I am interested in these works:%0D%0A%0D%0A'
       + carro.map(function(sl){ return '- '+CAT[sl].t+' ('+CAT[sl].m+') — '+dinero(CAT[sl].usd); }).join('%0D%0A')
       + '%0D%0A%0D%0ATotal: '+dinero(suma)+'%0D%0A%0D%0ACould you confirm availability and shipping?';
-    pedir.href = 'mailto:judasaca.art@gmail.com?subject=Enquiry%20from%20judasaca.art&body='+cuerpo;
+    pedir.href = 'mailto:contact@judasaca.art?subject=Enquiry%20from%20judasaca.art&body='+cuerpo;
   }
 
   function abrir(){ panel.classList.add('abierto'); velo.classList.add('abierto');

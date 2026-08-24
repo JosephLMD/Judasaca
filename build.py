@@ -14,8 +14,15 @@ import os, re, html
 
 RUTA = os.path.dirname(os.path.abspath(__file__))
 SITIO = 'https://judasaca.art'
-CORREO = 'judasaca.art@gmail.com'
+CORREO = 'contact@judasaca.art'
 IG = 'https://www.instagram.com/judasaca'
+
+# ── formulario de contacto ───────────────────────────────────────────────
+# Un sitio estatico no puede mandar correo por si solo: no hay servidor detras.
+# Web3Forms recibe el envio y lo reenvia a CORREO. Se saca la llave en
+# web3forms.com poniendo contact@judasaca.art, llega por correo, y se pega aqui.
+# Mientras diga PEGA-AQUI, el formulario no envia nada.
+LLAVE_FORM = '511aafa4-63bd-453c-a671-8825c5104c7a'
 REEL = 'https://www.instagram.com/reel/DXqQrk9l-U-/'
 
 # ── las obras ────────────────────────────────────────────────────────────
@@ -420,8 +427,8 @@ home = cabeza(
     </div>
 
     <div class="portada-obra">
-      <img src="img/juan-salazar.webp" width="1100" height="1471"
-           alt="Juan Salazar, JUDASACA, in Bogotá">
+      <img src="intro_photo.jpg"
+           alt="Juan Salazar, JUDASACA">
       <div class="pie-obra">Juan Salazar · Bogotá</div>
     </div>
 
@@ -448,19 +455,22 @@ about = cabeza(
   'About · JUDASACA · Juan Salazar',
   'Juan Salazar, known as JUDASACA, is a Colombian hybrid artist working between '
   'traditional painting and augmented reality.',
-  'about.html', og='img/juan-salazar.webp') + f'''
+  'about.html', og='img/about_photo.jpeg') + f'''
 <main>
   <section>
     <div class="wrap">
-      <div class="tit"><div class="eti">About</div><h2>Juan Salazar</h2></div>
+      <div class="tit centrado"><div class="eti">About</div><h2>Juan Salazar</h2></div>
       <div class="dos">
-        <div>
-          <img class="retrato" src="img/juan-salazar.webp" width="1100" height="1471"
-               alt="Juan Salazar, JUDASACA, in Bogotá">
+        <!-- La foto se queda quieta mientras el texto corre. Es el gesto mas caro
+             que se puede hacer sin agregar un solo elemento a la pagina. -->
+        <div class="foto">
+          <img class="retrato" src="about_photo.jpeg"
+               alt="Juan Salazar painting a mural, Bogotá">
+          <figcaption class="pie-foto">Studio, Bogotá</figcaption>
         </div>
-        <div class="prosa">
+        <div class="prosa vida">
           <p class="entrada">JUDASACA is a hybrid artist. He paints on canvas, and then
-            he lets the painting move.</p>
+            <span class="mueve">he lets the painting move.</span></p>
 
           <p>Juan Salazar spent more than fifteen years in marketing and international
             business before art became the work rather than the thing beside it. His
@@ -619,22 +629,63 @@ contact = cabeza(
   'Contact · JUDASACA',
   'Contact Juan Salazar, JUDASACA. Bogotá, Colombia. Enquiries about original '
   'works, exhibitions and commissions.',
-  'contact.html') + f'''
+  'contact.html', og='img/nothing-stays-the-same-sm.webp') + f'''
 <main>
   <section>
     <div class="wrap estrecho contacto">
+      <!-- Una obra y no un retrato: la pagina de contacto es el ultimo sitio donde
+           alguien duda, y lo que tiene que ver ahi es el trabajo. -->
+      <figure class="obra-contacto">
+        <img src="contact_photo.jpeg" alt="Juan Salazar with a signed print of Smiling Ratsquiat, King Crown">
+        <figcaption><span class="t1">Smiling Ratsquiat,</span> <span class="t2">King Crown</span></figcaption>
+      </figure>
+
       <div class="tit">
         <div class="eti">Contact</div>
         <h2>Say something</h2>
         <p>Enquiries about available works, exhibitions, commissions and collaborations
           all reach the same place, and Juan answers them himself.</p>
       </div>
-      <a class="correo" href="mailto:{CORREO}">{CORREO}</a>
+
+      <form class="forma" id="forma" action="https://api.web3forms.com/submit" method="POST">
+        <input type="hidden" name="access_key" value="{LLAVE_FORM}">
+        <input type="hidden" name="subject" value="New enquiry from judasaca.art">
+        <input type="hidden" name="from_name" value="judasaca.art">
+        <!-- Trampa para robots: un humano nunca la ve ni la llena. Si viene
+             marcada, Web3Forms descarta el envio sin molestar a nadie. -->
+        <input type="checkbox" name="botcheck" class="miel" tabindex="-1" autocomplete="off">
+
+        <div class="dos-campos">
+          <div class="campo">
+            <label for="nombre">First name</label>
+            <input id="nombre" name="First name" type="text" required autocomplete="given-name">
+          </div>
+          <div class="campo">
+            <label for="apellido">Last name</label>
+            <input id="apellido" name="Last name" type="text" autocomplete="family-name">
+          </div>
+        </div>
+        <div class="campo">
+          <label for="correo">Email</label>
+          <input id="correo" name="email" type="email" required autocomplete="email">
+        </div>
+        <div class="campo">
+          <label for="mensaje">Message</label>
+          <textarea id="mensaje" name="Message" rows="5" required></textarea>
+        </div>
+        <button class="btn lleno enviar" type="submit">Send</button>
+        <p class="aviso-forma" id="aviso-forma" role="status" aria-live="polite"></p>
+      </form>
+
+      <p class="o-bien">Or write directly to
+        <a class="correo-linea" href="mailto:{CORREO}">{CORREO}</a></p>
+
       <div class="enlaces">
         <a href="{IG}" rel="noopener">Instagram · @judasaca</a>
         <a href="art.html">Available works</a>
         <a href="cv.html">CV</a>
       </div>
+
       <div class="prosa" style="margin-top:48px">
         <h3>Based in Bogotá</h3>
         <p>Works ship worldwide. For exhibitions and press, ask for the full dossier and
@@ -643,6 +694,33 @@ contact = cabeza(
     </div>
   </section>
 </main>
+
+<script>
+/* Envia sin recargar la pagina. Si el JavaScript falla o esta apagado, el form
+   se manda igual por POST normal: Web3Forms responde con su propia pagina de
+   gracias. Nunca queda un formulario que no hace nada. */
+(function(){{
+  var f=document.getElementById('forma'); if(!f||!window.fetch) return;
+  var aviso=document.getElementById('aviso-forma'), boton=f.querySelector('button');
+  f.addEventListener('submit', function(e){{
+    e.preventDefault();
+    aviso.className='aviso-forma'; aviso.textContent='Sending…'; boton.disabled=true;
+    fetch(f.action, {{method:'POST', body:new FormData(f), headers:{{'Accept':'application/json'}}}})
+      .then(function(r){{ return r.json(); }})
+      .then(function(d){{
+        if(!d.success) throw new Error(d.message||'error');
+        f.reset();
+        aviso.className='aviso-forma ok';
+        aviso.textContent='Thank you. Juan reads these himself and will reply from {CORREO}.';
+      }})
+      .catch(function(){{
+        aviso.className='aviso-forma mal';
+        aviso.textContent='That did not go through. Please write directly to {CORREO}.';
+      }})
+      .then(function(){{ boton.disabled=false; }});
+  }});
+}})();
+</script>
 ''' + PIE
 
 # ══════════════════════════════════════════════════════════════════════════

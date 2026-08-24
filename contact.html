@@ -51,7 +51,7 @@
   </nav>
   <div class="abajo">
     Bogotá, Colombia<br>
-    <a href="mailto:judasaca.art@gmail.com">judasaca.art@gmail.com</a><br>
+    <a href="mailto:contact@judasaca.art">contact@judasaca.art</a><br>
     <a href="https://www.instagram.com/judasaca" rel="noopener">@judasaca</a>
   </div>
 </aside>
@@ -59,13 +59,52 @@
 <main>
   <section>
     <div class="wrap estrecho contacto">
+      <!-- Una obra y no un retrato: la pagina de contacto es el ultimo sitio donde
+           alguien duda, y lo que tiene que ver ahi es el trabajo. -->
+      <figure class="obra-contacto">
+        <img src="contact_photo.jpeg" alt="Juan Salazar with a signed print of Smiling Ratsquiat, King Crown">
+        <figcaption><span class="t1">Smiling Ratsquiat,</span> <span class="t2">King Crown</span></figcaption>
+      </figure>
+
       <div class="tit">
         <div class="eti">Contact</div>
         <h2>Say something</h2>
         <p>Enquiries about available works, exhibitions, commissions and collaborations
           all reach the same place, and Juan answers them himself.</p>
       </div>
-      <a class="correo" href="mailto:judasaca.art@gmail.com">judasaca.art@gmail.com</a>
+
+      <form class="forma" id="forma" action="https://api.web3forms.com/submit" method="POST">
+        <input type="hidden" name="access_key" value="511aafa4-63bd-453c-a671-8825c5104c7a">
+        <input type="hidden" name="subject" value="New enquiry from judasaca.art">
+        <input type="hidden" name="from_name" value="judasaca.art">
+        <!-- Trampa para robots: un humano nunca la ve ni la llena. -->
+        <input type="checkbox" name="botcheck" class="miel" tabindex="-1" autocomplete="off">
+
+        <div class="dos-campos">
+          <div class="campo">
+            <label for="nombre">First name</label>
+            <input id="nombre" name="First name" type="text" required autocomplete="given-name">
+          </div>
+          <div class="campo">
+            <label for="apellido">Last name</label>
+            <input id="apellido" name="Last name" type="text" autocomplete="family-name">
+          </div>
+        </div>
+        <div class="campo">
+          <label for="correo">Email</label>
+          <input id="correo" name="email" type="email" required autocomplete="email">
+        </div>
+        <div class="campo">
+          <label for="mensaje">Message</label>
+          <textarea id="mensaje" name="Message" rows="5" required></textarea>
+        </div>
+        <button class="btn lleno enviar" type="submit">Send</button>
+        <p class="aviso-forma" id="aviso-forma" role="status" aria-live="polite"></p>
+      </form>
+
+      <p class="o-bien">Or write directly to
+        <a class="correo-linea" href="mailto:contact@judasaca.art">contact@judasaca.art</a></p>
+
       <div class="enlaces">
         <a href="https://www.instagram.com/judasaca" rel="noopener">Instagram · @judasaca</a>
         <a href="art.html">Available works</a>
@@ -80,6 +119,33 @@
   </section>
 </main>
 
+<script>
+/* Envia sin recargar la pagina. Si el JavaScript falla o esta apagado, el form
+   se manda igual por POST normal y Web3Forms responde con su pagina de gracias.
+   Nunca queda un formulario que no hace nada. */
+(function(){
+  var f=document.getElementById('forma'); if(!f||!window.fetch) return;
+  var aviso=document.getElementById('aviso-forma'), boton=f.querySelector('button');
+  f.addEventListener('submit', function(e){
+    e.preventDefault();
+    aviso.className='aviso-forma'; aviso.textContent='Sending…'; boton.disabled=true;
+    fetch(f.action, {method:'POST', body:new FormData(f), headers:{'Accept':'application/json'}})
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(!d.success) throw new Error(d.message||'error');
+        f.reset();
+        aviso.className='aviso-forma ok';
+        aviso.textContent='Thank you. Juan reads these himself and will reply from contact@judasaca.art.';
+      })
+      .catch(function(){
+        aviso.className='aviso-forma mal';
+        aviso.textContent='That did not go through. Please write directly to contact@judasaca.art.';
+      })
+      .then(function(){ boton.disabled=false; });
+  });
+})();
+</script>
+
 <footer>
   <div class="wrap pie">
     <div class="col"><b>Artwork</b>
@@ -90,7 +156,7 @@
     <div class="col"><b>Studio</b>
       <a href="about.html">About the artist</a>
       <a href="contact.html">Contact</a>
-      <a href="mailto:judasaca.art@gmail.com">judasaca.art@gmail.com</a>
+      <a href="mailto:contact@judasaca.art">contact@judasaca.art</a>
     </div>
     <div class="col"><b>Follow</b>
       <a href="https://www.instagram.com/judasaca" rel="noopener">Instagram · @judasaca</a>
@@ -221,7 +287,7 @@
     var cuerpo = 'Hi Juan, I am interested in these works:%0D%0A%0D%0A'
       + carro.map(function(sl){ return '- '+CAT[sl].t+' ('+CAT[sl].m+') — '+dinero(CAT[sl].usd); }).join('%0D%0A')
       + '%0D%0A%0D%0ATotal: '+dinero(suma)+'%0D%0A%0D%0ACould you confirm availability and shipping?';
-    pedir.href = 'mailto:judasaca.art@gmail.com?subject=Enquiry%20from%20judasaca.art&body='+cuerpo;
+    pedir.href = 'mailto:contact@judasaca.art?subject=Enquiry%20from%20judasaca.art&body='+cuerpo;
   }
 
   function abrir(){ panel.classList.add('abierto'); velo.classList.add('abierto');
