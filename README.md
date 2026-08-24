@@ -37,3 +37,26 @@ palabra *Sold* en lugar del precio y sin botones.
 - `img/` — obras (`-sm` para la rejilla, grande para la lupa), retrato y logo
 - `CNAME` — el dominio, lo lee GitHub Pages
 - `sitemap.xml`, `robots.txt` — para Google
+
+
+## Pagos con Bold
+
+El boton de pagos de Bold exige una firma SHA256 cuando el monto va fijo. Esa
+firma se calcula con la llave secreta, y este sitio es estatico: no hay servidor
+donde esconderla. Si la llave viaja al navegador, cualquiera puede firmar el
+monto que quiera.
+
+Por eso la firma la genera un Cloudflare Worker:
+
+- Worker: `judasaca-bold` (cuenta de Cloudflare de judasaca.art)
+- URL: https://judasaca-bold.judasaca-art.workers.dev
+- Codigo fuente: `worker-bold.js`, una carpeta arriba de `site/`
+- La llave secreta vive como secreto del Worker (`BOLD_LLAVE_SECRETA`), nunca en este repositorio
+
+**El precio tambien vive en el Worker, no en la pagina.** El navegador solo manda
+el slug de la obra; el Worker decide el monto. Firmar un dato que mando el
+navegador no protege de nada.
+
+Al cambiar un secreto o una variable en Cloudflare hay que ir a Deployments y
+promover la version nueva: agregar el secreto crea una version, pero no la
+despliega sola.
