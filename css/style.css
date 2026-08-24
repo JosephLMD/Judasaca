@@ -5,6 +5,8 @@
 :root{
   --tinta:#0B0B0B; --gris:#6B6B6B; --tenue:#707070; --linea:#E6E6E6;
   --papel:#FFFFFF; --humo:#F6F5F3;
+  --coral:#C9421F;   /* sacado del muro de la foto de About. 5.0:1 sobre blanco */
+  --oro:#9A6A00;     /* la corona del grabado, bajada hasta que se pueda leer */
   --max:1280px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -99,6 +101,8 @@ nav a.on{color:var(--gris)}
 
 /* ── titulares de seccion ── */
 .tit{margin:0 0 34px}
+.tit.centrado{text-align:center}
+.tit.centrado p{margin-left:auto;margin-right:auto}
 .tit .eti{font-size:11.5px;letter-spacing:3.4px;text-transform:uppercase;color:var(--tenue);
   margin-bottom:12px}
 .tit h2{font-size:clamp(26px,3.6vw,40px);font-weight:800;letter-spacing:-1px;line-height:1.1}
@@ -149,8 +153,89 @@ section.humo{background:var(--humo)}
 .cita cite{display:block;font-size:13px;color:var(--tenue);font-style:normal;margin-top:10px;
   letter-spacing:.4px}
 
-.retrato{width:100%}
-.dos{display:grid;grid-template-columns:1fr 1.15fr;gap:52px;align-items:start}
+.retrato{width:100%;display:block}
+/* La foto pesaba casi la mitad de la fila. Bajada un 35%: la pagina respira y
+   el texto deja de competir con ella. */
+.dos{display:grid;grid-template-columns:.65fr 1.15fr;gap:52px;align-items:start}
+@media(max-width:860px){.dos{grid-template-columns:1fr;gap:34px}
+  .dos .foto{max-width:66%}}
+
+/* ══ About ══════════════════════════════════════════════════════════════
+   Minimalismo no es quitar cosas hasta que quede poco: es que lo que queda
+   este bien puesto. Nada de lo de abajo agrega un elemento nuevo a la pagina,
+   solo cambia como respira lo que ya estaba.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* La foto se queda quieta mientras el texto corre. Cuesta una linea y es lo
+   que separa una pagina de artista de una hoja de Word. */
+.dos .foto{position:sticky;top:78px;margin-inline:auto;max-width:100%}
+@media(max-width:980px){.dos .foto{max-width:62%}}
+.pie-foto{font-size:11px;letter-spacing:2.6px;text-transform:uppercase;color:var(--coral);
+  margin-top:12px}
+@media(max-width:860px){.dos .foto{position:static}}
+
+/* 64 caracteres. Mas largo y el ojo pierde el renglon al volver. */
+.prosa.vida{max-width:64ch}
+.prosa.vida p{margin-bottom:22px;line-height:1.72}
+.prosa.vida p.entrada{font-size:clamp(21px,2.5vw,27px);line-height:1.4;letter-spacing:-.6px;
+  color:var(--tinta);margin-bottom:30px}
+/* El unico color del sitio, y sale de la foto: el rojo de los bloques que esta
+   pintando en el muro. Va en media frase y en ninguna otra parte. */
+.prosa.vida .mueve{color:var(--coral)}
+
+/* Capitular en el primer parrafo del cuerpo. */
+.prosa.vida p.entrada + p::first-letter{float:left;font-size:62px;line-height:.82;
+  font-weight:800;margin:7px 12px 0 0;color:var(--tinta)}
+
+/* Las marcas de seccion en coral: mismas versalitas que el pie de foto. */
+.prosa.vida h3{font-size:11.5px;letter-spacing:3.4px;text-transform:uppercase;font-weight:600;
+  color:var(--coral);margin:52px 0 16px;padding-top:24px;border-top:1px solid var(--linea)}
+
+/* La cita sin barra lateral: filete arriba y tamano grande. */
+.prosa.vida .cita{border-left:0;border-top:1px solid var(--tinta);padding:28px 0 0;
+  margin:46px 0;font-size:clamp(20px,2.7vw,28px);line-height:1.32;letter-spacing:-.6px}
+@media(max-width:680px){
+  .prosa.vida p.entrada + p::first-letter{font-size:50px;margin-right:9px}
+}
+
+/* ══ Contacto ═══════════════════════════════════════════════════════════ */
+/* Recorte 4:5, centrada, y encogida tambien en el telefono. */
+.obra-contacto{margin:0 auto 52px;max-width:58%}
+.obra-contacto img{width:100%;display:block;aspect-ratio:4/5;object-fit:cover;
+  object-position:50% 34%}
+@media(max-width:680px){.obra-contacto{max-width:78%}}
+.obra-contacto figcaption{font-size:11px;letter-spacing:2.6px;text-transform:uppercase;
+  margin-top:14px;text-align:center}
+/* Los dos colores salen del propio grabado. */
+.obra-contacto figcaption .t1{color:var(--coral)}
+.obra-contacto figcaption .t2{color:var(--oro)}
+
+/* Fondo beige tibio y una sombra corta bajo la linea: el campo se ve antes de
+   leer la etiqueta, sin meterle una caja por los cuatro lados. */
+.forma{display:grid;gap:20px;margin-top:36px;max-width:580px}
+.dos-campos{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.campo label{display:block;font-size:11px;letter-spacing:2.4px;text-transform:uppercase;
+  color:var(--tenue);margin-bottom:9px}
+.campo input,.campo textarea{width:100%;font-family:inherit;font-size:16px;color:var(--tinta);
+  background:#F5F2EA;border:0;border-bottom:1.5px solid #C6BFAE;padding:13px 14px;
+  border-radius:2px 2px 0 0;box-shadow:0 4px 7px -5px rgba(11,11,11,.4);
+  transition:background .2s,border-color .2s,box-shadow .2s}
+.campo input::placeholder,.campo textarea::placeholder{color:#A9A496}
+.campo input:focus,.campo textarea:focus{outline:none;background:#F1EDE1;
+  border-bottom-color:var(--tinta);box-shadow:0 5px 9px -5px rgba(11,11,11,.55)}
+.campo input:focus + .ayuda,.campo textarea:focus + .ayuda{color:var(--tinta)}
+.campo textarea{resize:vertical;min-height:130px;line-height:1.6}
+.campo .ayuda{display:block;font-size:12px;color:#9A9894;margin-top:7px;transition:color .2s}
+.forma .enviar{justify-self:start;margin-top:8px}
+.forma .enviar[disabled]{opacity:.45;cursor:default}
+.aviso-forma{font-size:14px;color:var(--gris);min-height:1.4em}
+.aviso-forma.ok{color:#1B7F4B}
+.aviso-forma.mal{color:#B4232B}
+/* La trampa de robots: fuera de pantalla y nunca enfocable. */
+.miel{position:absolute!important;left:-9999px;width:1px;height:1px;opacity:0}
+.o-bien{margin-top:34px;font-size:15px;color:var(--gris)}
+.correo-linea{color:var(--tinta);text-decoration:none;border-bottom:1px solid var(--tinta)}
+@media(max-width:560px){.dos-campos{grid-template-columns:1fr}}
 
 /* ── prensa ── */
 .prensa{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:8px}
@@ -202,7 +287,6 @@ footer{border-top:1px solid var(--linea);padding:46px 0 60px;margin-top:20px}
 
 @media(max-width:980px){
   .obras{grid-template-columns:repeat(2,1fr)}
-  .dos{grid-template-columns:1fr;gap:34px}
   .datos{grid-template-columns:repeat(2,1fr)}
   .prensa{grid-template-columns:1fr}
 }
