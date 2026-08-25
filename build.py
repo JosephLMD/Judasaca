@@ -17,6 +17,21 @@ SITIO = 'https://judasaca.art'
 CORREO = 'contact@judasaca.art'
 IG = 'https://www.instagram.com/judasaca'
 
+# ── pagos con Bold ───────────────────────────────────────────────────────
+# La llave de IDENTIDAD es publica y va en el HTML: solo dice a que comercio
+# pertenece el cobro. La llave SECRETA no esta aqui ni en este repositorio,
+# vive como secreto del Worker de Cloudflare.
+LLAVE_IDENTIDAD = '2heS56eZeRZj1n1B8NDPF9_LA2aDpNbyNBJOoG65qWI'
+FIRMADOR = 'https://judasaca-bold.judasaca-art.workers.dev'
+
+# Tope de tarjeta de Bold: 5.000.000 COP. A la TRM que usa el dossier (3.361,62)
+# son unos 1.487 dolares. Una obra por encima de eso NO puede pagarse con
+# tarjeta: la pasarela devuelve error. Preferimos no mostrar el boton antes que
+# mandar a alguien a fallar despues de decidirse a comprar.
+# Cuando Bold suba el limite (soporte.online@bold.co), se cambia este numero y
+# los botones aparecen solos.
+TOPE_TARJETA_USD = 1487
+
 # ── formulario de contacto ───────────────────────────────────────────────
 # Un sitio estatico no puede mandar correo por si solo: no hay servidor detras.
 # Web3Forms recibe el envio y lo reenvia a CORREO. Se saca la llave en
@@ -30,27 +45,31 @@ REEL = 'https://www.instagram.com/reel/DXqQrk9l-U-/'
 # tambien el boton Buy, con Apple Pay y Google Pay incluidos.
 OBRAS = [
  dict(slug='oil-city-woodstock',   titulo='Oil City Woodstock',
-      tec='Acrylics and oil stick on canvas', med='100 × 100 cm', usd=1500, buy='', vendida=False),
+      tec='Acrylics and oil stick on canvas', med='100 × 100 cm', usd=1950, buy='', vendida=False),
  dict(slug='sunday-snoops',        titulo='Sunday, Snoops',
-      tec='Acrylics and spray on canvas',     med='100 × 100 cm', usd=1500, buy='', vendida=False),
+      tec='Acrylics and spray on canvas',     med='100 × 100 cm', usd=1950, buy='', vendida=False),
  dict(slug='pop-art-rat',          titulo='Pop Art Rat',
-      tec='Acrylics and oil stick on canvas', med='100 × 100 cm', usd=1500, buy='', vendida=False),
+      tec='Acrylics and oil stick on canvas', med='100 × 100 cm', usd=1950, buy='', vendida=True),
  dict(slug='mango-og',             titulo='Mango OG',
-      tec='Acrylics and oil stick on canvas', med='100 × 100 cm', usd=1500, buy='', vendida=False),
+      tec='Acrylics and oil stick on canvas', med='100 × 100 cm', usd=1950, buy='', vendida=False),
  dict(slug='original-pastel-disney', titulo='Original Pastel Disney',
-      tec='Acrylics and spray on canvas',     med='100 × 100 cm', usd=1500, buy='', vendida=False),
+      tec='Acrylics and spray on canvas',     med='100 × 100 cm', usd=1950, buy='', vendida=False),
  dict(slug='nothing-stays-the-same', titulo='Nothing Stays the Same',
-      tec='Oil on canvas',                    med='100 × 120 cm', usd=1500, buy='', vendida=False),
+      tec='Oil on canvas',                    med='100 × 120 cm', usd=1950, buy='', vendida=False),
+ # recorte=True: la obra es redonda y su foto no es cuadrada, asi que dentro del
+ # marco cuadrado quedaba flotando con franjas arriba y abajo. Con recorte llena
+ # el marco y se le quita lo que sobra por arriba y por abajo.
  dict(slug='blue-thoughts-rat',    titulo='Blue Thoughts Rat',
-      tec='Acrylics and spray on canvas',     med='80 cm diameter', usd=950, buy='', vendida=False),
+      tec='Acrylics and spray on canvas',     med='80 cm diameter', usd=1235, buy='',
+      vendida=False, recorte=True),
  dict(slug='smiling-ratsquiat-blue-crown', titulo='Smiling Ratsquiat, Blue Crown',
-      tec='Acrylics and spray on canvas',     med='50 × 50 cm', usd=750, buy='', vendida=False),
+      tec='Acrylics and spray on canvas',     med='50 × 50 cm', usd=975, buy='', vendida=False),
  dict(slug='smiling-ratsquiat-yellow-crown', titulo='Smiling Ratsquiat, Yellow Crown',
-      tec='Acrylics and spray on canvas',     med='50 × 50 cm', usd=750, buy='', vendida=False),
+      tec='Acrylics and spray on canvas',     med='50 × 50 cm', usd=975, buy='', vendida=False),
  dict(slug='oil-woodstock',        titulo='Oil Woodstock',
-      tec='Acrylics and oil on canvas',       med='50 × 50 cm', usd=750, buy='', vendida=False),
+      tec='Acrylics and oil on canvas',       med='50 × 50 cm', usd=975, buy='', vendida=False),
  dict(slug='here-love',            titulo='Here, Love',
-      tec='Acrylics and spray on canvas',     med='50 × 50 cm', usd=750, buy='', vendida=False),
+      tec='Acrylics and spray on canvas',     med='50 × 50 cm', usd=975, buy='', vendida=True),
 ]
 
 # ── exposiciones ─────────────────────────────────────────────────────────
@@ -192,8 +211,12 @@ def cabeza(titulo, desc, activa, og='img/oil-city-woodstock-sm.webp'):
 
 
 import json
+# Las vendidas quedan fuera del catalogo del carrito. Asi, si alguien tenia una
+# guardada en su navegador de antes, desaparece sola la proxima vez que entre.
 CATALOGO = json.dumps({o['slug']: {'t': o['titulo'], 'm': o['med'], 'usd': o['usd']}
-                       for o in OBRAS}, ensure_ascii=False)
+                       for o in OBRAS if not o['vendida']}, ensure_ascii=False)
+
+DISPONIBLES = sum(1 for o in OBRAS if not o['vendida'])
 
 PIE = f'''
 <footer>
@@ -212,7 +235,14 @@ PIE = f'''
       <a href="{IG}" rel="noopener">Instagram · @judasaca</a>
     </div>
     <div class="col fin">JUDASACA · Juan Salazar<br>Bogotá, Colombia<br>
-      <span style="opacity:.7">nothing stays the same</span></div>
+      <span style="opacity:.7">nothing stays the same</span>
+      <!-- Dice solo lo que es verdad. El pago ocurre dentro de la pasarela de
+           Bold, no en esta pagina, asi que el numero de la tarjeta no pasa por
+           aqui ni queda en ningun sitio nuestro. No se reclama ninguna
+           certificacion que no tengamos. -->
+      <span class="seguro">Payments are processed by Bold.<br>
+        Card details are entered on Bold's gateway and never pass through this site.<br>
+        <a href="privacy.html">Privacy</a></span></div>
   </div>
 </footer>
 
@@ -368,6 +398,169 @@ PIE = f'''
 
   pintar();
 }})();
+
+/* ── Compra ─────────────────────────────────────────────────────────────
+   Solo corre en paginas con huecos .pagar (hoy, la de obras).
+
+   Flujo: el Worker firma → aparece "Buy" → el comprador deja sus datos de
+   envio → se guardan → recien ahi se pinta el boton de Bold y paga.
+
+   El navegador NUNCA manda el precio: manda slugs, y el Worker decide. Si
+   algo de esto falla, las obras conservan su boton de Inquire y nadie queda
+   mirando un boton muerto. */
+(function(){{
+  var huecos = [].slice.call(document.querySelectorAll('.pagar[data-obra]'));
+  if (!huecos.length || !window.fetch) return;
+
+  var slugs = huecos.map(function(h){{ return h.getAttribute('data-obra'); }});
+  var libreria = false;
+
+  function cargarLibreria(){{
+    if (libreria) return;
+    libreria = true;
+    var s = document.createElement('script');
+    s.src = 'https://checkout.bold.co/library/boldPaymentButton.js';
+    document.head.appendChild(s);
+  }}
+
+  fetch('{FIRMADOR}/firma', {{
+    method: 'POST',
+    headers: {{ 'Content-Type': 'application/json' }},
+    body: JSON.stringify({{ slugs: slugs }})
+  }})
+  .then(function(r){{ return r.json(); }})
+  .then(function(d){{
+    // El Worker manda la lista real de vendidas. Si una se vendio despues de
+    // publicar la pagina, se marca aqui sin tener que reconstruir el sitio.
+    if (d && d.vendidas) marcarVendidas(d.vendidas);
+    if (!d || !d.obras) return;
+
+    huecos.forEach(function(hueco){{
+      var o = d.obras[hueco.getAttribute('data-obra')];
+      if (!o) return;
+      var b = document.createElement('button');
+      b.className = 'btn lleno';
+      b.textContent = 'Buy';
+      b.addEventListener('click', function(){{ pedirDatos(hueco, o); }});
+      hueco.appendChild(b);
+    }});
+  }})
+  .catch(function(){{ }});
+
+  /* Una obra vendida se apaga entera: sello, ficha tachada y sin botones. */
+  function marcarVendidas(lista){{
+    lista.forEach(function(slug){{
+      var hueco = document.querySelector('.pagar[data-obra="' + slug + '"]');
+      if (!hueco) return;
+      var obra = hueco.closest('.obra');
+      if (!obra || obra.classList.contains('agotada')) return;
+      obra.classList.add('agotada');
+      var marco = obra.querySelector('.marco');
+      if (marco && !marco.querySelector('.sello')) {{
+        marco.classList.add('vendido');
+        var s = document.createElement('span');
+        s.className = 'sello';
+        s.setAttribute('aria-hidden', 'true');
+        s.innerHTML = '<i></i><b>Sold</b><i></i>';
+        marco.appendChild(s);
+      }}
+      var acciones = obra.querySelector('.acciones');
+      if (acciones) acciones.innerHTML = '<span class="sello-vendida">Sold</span>';
+    }});
+  }}
+
+  /* Los datos de envio se piden ANTES de pagar. Bold entrega el correo del
+     comprador, pero no dice a donde mandar un cuadro de un metro. */
+  function pedirDatos(hueco, o){{
+    if (document.getElementById('caja-envio')) return;
+
+    var caja = document.createElement('div');
+    caja.className = 'velo abierto';
+    caja.id = 'caja-envio';
+    caja.innerHTML =
+      '<div class="envio" role="dialog" aria-modal="true" aria-label="Shipping details">'
+      + '<button class="x" type="button" aria-label="Close">&times;</button>'
+      + '<h3>' + o.description + '</h3>'
+      + '<p class="que">USD ' + Number(o.amount).toLocaleString('en-US')
+      + ' · where should it go?</p>'
+      + '<form id="form-envio">'
+      + campo('nombre', 'Full name', 'text', true, 'name')
+      + campo('email', 'Email', 'email', true, 'email')
+      + campo('telefono', 'Phone', 'tel', true, 'tel')
+      + campo('direccion', 'Address', 'text', true, 'street-address')
+      + '<div class="dos-campos">'
+      + campo('ciudad', 'City', 'text', true, 'address-level2')
+      + campo('pais', 'Country', 'text', true, 'country-name')
+      + '</div>'
+      + campo('notas', 'Anything we should know', 'text', false, 'off')
+      + '<button class="btn lleno" type="submit">Continue to payment</button>'
+      + '<p class="nota">Next step is Bold\\'s payment gateway. Your card details '
+      + 'are entered there and never pass through this site.</p>'
+      + '</form></div>';
+    document.body.appendChild(caja);
+    document.body.style.overflow = 'hidden';
+
+    function cerrar(){{
+      caja.remove();
+      document.body.style.overflow = '';
+    }}
+    caja.querySelector('.x').addEventListener('click', cerrar);
+    caja.addEventListener('click', function(e){{ if (e.target === caja) cerrar(); }});
+
+    caja.querySelector('#form-envio').addEventListener('submit', function(e){{
+      e.preventDefault();
+      var f = e.target;
+      var datos = {{ orderId: o.orderId, slug: hueco.getAttribute('data-obra') }};
+      ['nombre','email','telefono','direccion','ciudad','pais','notas']
+        .forEach(function(k){{ datos[k] = (f[k] && f[k].value || '').trim(); }});
+
+      var boton = f.querySelector('button[type=submit]');
+      boton.disabled = true;
+      boton.textContent = 'One moment…';
+
+      // Si el guardado falla no se bloquea la compra: es peor perder la venta
+      // que perder la direccion, que siempre se puede pedir por correo.
+      fetch('{FIRMADOR}/datos', {{
+        method: 'POST',
+        headers: {{ 'Content-Type': 'application/json' }},
+        body: JSON.stringify(datos)
+      }}).catch(function(){{ }}).then(function(){{
+        cerrar();
+        abrirBold(hueco, o, datos);
+      }});
+    }});
+  }}
+
+  function campo(nombre, etiqueta, tipo, obligatorio, autocompletar){{
+    return '<div class="campo"><label for="e-' + nombre + '">' + etiqueta + '</label>'
+      + '<input id="e-' + nombre + '" name="' + nombre + '" type="' + tipo + '"'
+      + (obligatorio ? ' required' : '')
+      + ' autocomplete="' + autocompletar + '"></div>';
+  }}
+
+  function abrirBold(hueco, o, datos){{
+    cargarLibreria();
+    hueco.innerHTML = '';
+    var s = document.createElement('script');
+    s.setAttribute('data-bold-button', 'dark-M');
+    s.setAttribute('data-api-key', '{LLAVE_IDENTIDAD}');
+    s.setAttribute('data-order-id', o.orderId);
+    s.setAttribute('data-currency', o.currency);
+    s.setAttribute('data-amount', o.amount);
+    s.setAttribute('data-integrity-signature', o.signature);
+    s.setAttribute('data-description', o.description);
+    s.setAttribute('data-redirection-url', '{SITIO}/thanks.html');
+    s.setAttribute('data-origin-url', '{SITIO}/art.html');
+    // Embedded: la pasarela abre encima del sitio y el comprador no se va.
+    s.setAttribute('data-render-mode', 'embedded');
+    // Se le pasan los datos ya escritos para que no los teclee dos veces.
+    s.setAttribute('data-customer-data', JSON.stringify({{
+      email: datos.email, fullName: datos.nombre, phone: datos.telefono
+    }}));
+    hueco.appendChild(s);
+    hueco.scrollIntoView({{ block: 'center', behavior: 'smooth' }});
+  }}
+}})();
 </script>
 </body>
 </html>
@@ -376,27 +569,45 @@ PIE = f'''
 
 def tarjeta_obra(o, mini=True):
     img = f"img/{o['slug']}-sm.webp" if mini else f"img/{o['slug']}.webp"
-    precio = ('<span class="vendida">Sold</span>' if o['vendida']
-              else f'<span class="p">USD {o["usd"]:,}</span>')
+    # El precio de una obra vendida se sigue mostrando, tachado. Esconderlo
+    # obliga a preguntar, y la respuesta ya no le sirve a nadie.
+    precio = f'<span class="p">USD {o["usd"]:,}</span>'
     asunto = f"Inquiry: {o['titulo']}"
     cuerpo = f"Hi Juan, I would like to know more about {o['titulo']} ({o['med']})."
     inquire = (f'<a class="btn" href="mailto:{CORREO}'
                f'?subject={asunto.replace(" ", "%20")}&body={cuerpo.replace(" ", "%20")}">Inquire</a>')
-    comprar = (f'<a class="btn lleno" href="{o["buy"]}" rel="noopener">Buy</a>'
-               if o['buy'] and not o['vendida'] else '')
+    # Hueco donde el JavaScript inserta el boton de Bold una vez el Worker
+    # devuelve la firma. Si el Worker no responde, el hueco se queda vacio y la
+    # obra sigue teniendo Inquire: nunca queda un boton de pago muerto.
+    comprar = ('' if (o['vendida'] or o['usd'] > TOPE_TARJETA_USD)
+               else f'<span class="pagar" data-obra="{o["slug"]}"></span>')
     carrito = ('' if o['vendida'] else
                f'<button class="btn add" data-slug="{o["slug"]}">Add to cart</button>')
-    return f'''      <article class="obra">
+
+    # Vendida: se va todo lo que invita a comprar y queda el sello. Dos rayas
+    # rojas en diagonal con la palabra en medio, y la ficha en gris tachada.
+    if o['vendida']:
+        acciones = '<span class="sello-vendida">Sold</span>'
+        sello = '<span class="sello" aria-hidden="true"><i></i><b>Sold</b><i></i></span>'
+        clase_obra, clase_marco = ' agotada', ' vendido'
+    else:
+        acciones = f'{comprar}{carrito}{inquire}'
+        sello, clase_obra, clase_marco = '', '', ''
+
+    if o.get('recorte'):
+        clase_marco += ' recorte'
+
+    return f'''      <article class="obra{clase_obra}">
         <figure>
-          <a class="marco" href="img/{o['slug']}.webp"
+          <a class="marco{clase_marco}" href="img/{o['slug']}.webp"
              data-lupa data-tit="{html.escape(o['titulo'])}"
              data-fic="{html.escape(o['tec'])} · {o['med']}">
-            <img src="{img}" alt="{html.escape(o['titulo'])}, {html.escape(o['tec'].lower())}, {o['med']}" loading="lazy">
+            <img src="{img}" alt="{html.escape(o['titulo'])}, {html.escape(o['tec'].lower())}, {o['med']}" loading="lazy">{sello}
           </a>
           <figcaption>
             <div class="linea"><span class="t">{html.escape(o['titulo'])}</span>
               <span class="f">· {o['med']} ·</span> {precio}</div>
-            <div class="acciones">{comprar}{carrito}{inquire}</div>
+            <div class="acciones">{acciones}</div>
           </figcaption>
         </figure>
       </article>
@@ -427,9 +638,9 @@ home = cabeza(
     </div>
 
     <div class="portada-obra">
-      <img src="intro_photo.jpg"
+      <img src="intro_photo.webp"
            alt="Juan Salazar, JUDASACA">
-      <div class="pie-obra">Juan Salazar · Bogotá</div>
+      <div class="pie-obra">Juan Salazar</div>
     </div>
 
     <div class="entrada-home">
@@ -455,7 +666,7 @@ about = cabeza(
   'About · JUDASACA · Juan Salazar',
   'Juan Salazar, known as JUDASACA, is a Colombian hybrid artist working between '
   'traditional painting and augmented reality.',
-  'about.html', og='img/about_photo.jpeg') + f'''
+  'about.html', og='about_photo.webp') + f'''
 <main>
   <section>
     <div class="wrap">
@@ -464,7 +675,7 @@ about = cabeza(
         <!-- La foto se queda quieta mientras el texto corre. Es el gesto mas caro
              que se puede hacer sin agregar un solo elemento a la pagina. -->
         <div class="foto">
-          <img class="retrato" src="about_photo.jpeg"
+          <img class="retrato" src="about_photo.webp"
                alt="Juan Salazar painting a mural, Bogotá">
           <figcaption class="pie-foto">Studio, Bogotá</figcaption>
         </div>
@@ -525,14 +736,14 @@ about = cabeza(
 # ══════════════════════════════════════════════════════════════════════════
 art = cabeza(
   'Original works · JUDASACA',
-  'Eleven original paintings by JUDASACA, available now. Acrylics, oil and spray '
+  f'{DISPONIBLES} original paintings by JUDASACA, available now. Acrylics, oil and spray '
   'on canvas. Bogotá, Colombia.',
   'art.html') + f'''
 <main>
   <section>
     <div class="wrap">
       <div class="tit">
-        <div class="eti">Original works · {len(OBRAS)} available</div>
+        <div class="eti">Original works · {DISPONIBLES} available</div>
         <h2>Art</h2>
         <p>Every piece here is a single original, painted by hand and signed. Prices are
           in US dollars and do not include shipping or framing; write and we will work
@@ -546,13 +757,26 @@ art = cabeza(
   <section class="humo">
     <div class="wrap estrecho prosa">
       <div class="tit"><div class="eti">Buying</div><h2>How it works</h2></div>
-      <p>Write using the button on the piece you want. You will get an answer from Juan
-        himself, not a form. He will confirm the work is still available, quote shipping
-        to your city, and explain how the augmented layer works once the canvas is on
-        your wall.</p>
+      <p>Anything marked <b>Sold</b> is gone; everything else on this page is available
+        right now. Pieces under the card limit can be paid for here directly, and the rest
+        go through Juan, who answers himself rather than through a form. Either way he
+        quotes shipping to your city and explains how the augmented layer works once the
+        canvas is on your wall.</p>
       <p>Works ship worldwide from Bogotá. Larger canvases usually travel rolled in a
         tube and are stretched on arrival, which is standard practice and keeps shipping
         sane.</p>
+
+      <!-- Dicho en positivo, pero sin inventar nada. Cada frase de aqui es
+           comprobable: el pago ocurre en la pasarela de Bold, el sitio va por
+           HTTPS, y el monto se firma antes de salir. No se menciona ninguna
+           certificacion que no sea nuestra. -->
+      <h3>Paying securely</h3>
+      <p>Payment is completed inside <b>Bold's payment gateway</b>. Your card details are
+        entered there and never pass through this site, which means they are not seen,
+        received or stored by us at any point. The connection is encrypted end to end, and
+        the amount of every sale is signed before it reaches the gateway, so it cannot be
+        changed on the way. What we keep is what you choose to tell us: a name, an email,
+        and what you wrote. The <a href="privacy.html">privacy page</a> sets out the rest.</p>
     </div>
   </section>
 </main>
@@ -636,7 +860,7 @@ contact = cabeza(
       <!-- Una obra y no un retrato: la pagina de contacto es el ultimo sitio donde
            alguien duda, y lo que tiene que ver ahi es el trabajo. -->
       <figure class="obra-contacto">
-        <img src="contact_photo.jpeg" alt="Juan Salazar with a signed print of Smiling Ratsquiat, King Crown">
+        <img src="contact_photo.webp" alt="Juan Salazar with a signed print of Smiling Ratsquiat, King Crown">
         <figcaption><span class="t1">Smiling Ratsquiat,</span> <span class="t2">King Crown</span></figcaption>
       </figure>
 
@@ -724,9 +948,142 @@ contact = cabeza(
 ''' + PIE
 
 # ══════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════════════
+# 7 · PRIVACIDAD
+# ══════════════════════════════════════════════════════════════════════════
+# No va en el menu principal: nadie entra a una web de arte buscando la
+# politica de privacidad. Va en el pie, que es donde se busca cuando se busca.
+privacidad = cabeza(
+  'Privacy · JUDASACA',
+  'How judasaca.art handles personal data: the contact form, payments through '
+  'Bold, and your rights under Colombian law.',
+  'privacy.html') + f'''
+<main>
+  <section>
+    <div class="wrap estrecho">
+      <div class="tit">
+        <div class="eti">Privacy</div>
+        <h2>What we collect, and what we do not</h2>
+        <p>Short version: a name, an email and a message if you write to us. Nothing else,
+          and never a card number.</p>
+      </div>
+
+      <div class="prosa">
+        <h3>Who is responsible</h3>
+        <p>Juan Salazar, working as JUDASACA, in Bogotá, Colombia.
+          Questions about anything on this page go to
+          <a href="mailto:{CORREO}">{CORREO}</a>.</p>
+
+        <h3>What this site collects</h3>
+        <p><b>The contact form.</b> Your first name, last name, email address and the
+          message you write. We use them to answer you and for nothing else. They are not
+          sold, rented or shared, and there is no mailing list to be added to.</p>
+        <p><b>The selection of works.</b> When you add a piece to the selection, that list
+          is saved in your own browser and never leaves your device. It is not a cookie and
+          it is not sent to us. Clearing your browser data erases it.</p>
+        <p><b>Payments.</b> Card details are entered inside Bold's payment gateway. They do
+          not pass through this site and we never see, receive or store them.</p>
+
+        <h3>Who else touches this information</h3>
+        <table class="tabla-privacidad">
+          <tr><td><b>Web3Forms</b></td><td>Delivers the contact form to our inbox.</td></tr>
+          <tr><td><b>Bold</b></td><td>Processes payments. Colombian payment gateway.</td></tr>
+          <tr><td><b>Cloudflare</b></td><td>Signs each sale so its amount cannot be altered.
+            It receives only which artwork was chosen, never who you are.</td></tr>
+        </table>
+
+        <h3>Your rights</h3>
+        <p>Under Ley 1581 de 2012 you may ask us what data we hold about you, correct it,
+          update it, or ask us to delete it, and you may withdraw your permission at any
+          time. Write to <a href="mailto:{CORREO}">{CORREO}</a> and Juan answers himself.
+          Consultations are answered within ten working days and complaints within fifteen.</p>
+
+        <h3>Cookies</h3>
+        <p>This site sets no advertising or tracking cookies, and there is nothing here
+          following you to other websites.</p>
+
+        <h3>Encryption</h3>
+        <p>The whole site is served over HTTPS, so everything travelling between your
+          browser and this site is encrypted, including whatever you type into the contact
+          form. Payment encryption is handled inside Bold's gateway.</p>
+
+        <p class="chico">Last updated <span class="dato-fecha">August 2026</span>.</p>
+      </div>
+    </div>
+  </section>
+</main>
+''' + PIE
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 8 · DESPUES DEL PAGO
+# ══════════════════════════════════════════════════════════════════════════
+# Bold devuelve al comprador aqui con ?bold-order-id=...&bold-tx-status=...
+# El estado que llega en la URL es informativo y puede no ser el definitivo, asi
+# que el texto no promete nada que no se pueda sostener: dice lo que Bold dijo y
+# remite a Juan, que es quien confirma de verdad.
+gracias = cabeza(
+  'Thank you · JUDASACA',
+  'Payment confirmation for your order at judasaca.art.',
+  'thanks.html') + f'''
+<main>
+  <section>
+    <div class="wrap estrecho prosa" style="text-align:center">
+      <div class="tit centrado">
+        <div class="eti">Order</div>
+        <h2 id="titulo-gracias">Thank you</h2>
+      </div>
+      <p id="mensaje-gracias">Juan will write to you from {CORREO} to confirm the work and
+        arrange shipping to your city.</p>
+      <p class="chico" id="referencia-gracias" style="color:var(--tenue)"></p>
+      <p style="margin-top:34px"><a class="btn" href="art.html">Back to the works</a></p>
+    </div>
+  </section>
+</main>
+
+<script>
+(function(){{
+  var p = new URLSearchParams(window.location.search);
+  var estado = (p.get('bold-tx-status') || '').toLowerCase();
+  var orden = p.get('bold-order-id');
+  var t = document.getElementById('titulo-gracias');
+  var m = document.getElementById('mensaje-gracias');
+  var r = document.getElementById('referencia-gracias');
+
+  if (estado === 'approved') {{
+    t.textContent = 'Thank you';
+    m.textContent = 'Your payment went through. Juan will write to you from {CORREO} '
+      + 'to confirm the work and arrange shipping to your city.';
+  }} else if (estado === 'rejected' || estado === 'failed') {{
+    t.textContent = 'That payment did not go through';
+    m.textContent = 'Nothing has been charged. You can try again, or write to {CORREO} '
+      + 'and Juan will sort it out with you directly.';
+  }} else if (estado) {{
+    t.textContent = 'Your payment is being processed';
+    m.textContent = 'Bold has not confirmed it yet. As soon as it settles, Juan will write '
+      + 'to you from {CORREO}.';
+  }}
+  if (orden) r.textContent = 'Reference: ' + orden;
+
+  /* El webhook de Bold puede tardar hasta diez minutos. El comprador esta aqui
+     ahora. Se le avisa al Worker para que marque la obra enseguida; el Worker
+     no se fia de esto y lo verifica contra Bold antes de hacer nada. */
+  if (orden && estado === 'approved' && window.fetch) {{
+    fetch('{FIRMADOR}/confirmar', {{
+      method: 'POST',
+      headers: {{ 'Content-Type': 'application/json' }},
+      body: JSON.stringify({{ orderId: orden }})
+    }}).catch(function(){{ }});
+  }}
+}})();
+</script>
+''' + PIE
+
+
 if __name__ == '__main__':
     for nombre, cuerpo in [('index.html', home), ('about.html', about), ('art.html', art),
-                           ('shop.html', shop), ('cv.html', cv), ('contact.html', contact)]:
+                           ('shop.html', shop), ('cv.html', cv), ('contact.html', contact),
+                           ('privacy.html', privacidad), ('thanks.html', gracias)]:
         n = escribir(nombre, cuerpo)
         print(f'  {nombre:<14} {n/1024:>6.1f} KB')
 
@@ -737,7 +1094,9 @@ if __name__ == '__main__':
     urls = ''.join(
         f'  <url><loc>{SITIO}/{"" if a == "index.html" else a}</loc>'
         f'<priority>{"1.0" if a == "index.html" else "0.8"}</priority></url>\n'
-        for a, _ in PAGINAS)
+        # privacy.html no esta en PAGINAS porque no va en el menu, pero si debe
+        # poder indexarse: es la pagina que alguien busca cuando desconfia.
+        for a, _ in PAGINAS + [('privacy.html', 'Privacy')])
     open(os.path.join(RUTA, 'sitemap.xml'), 'w').write(
         f'<?xml version="1.0" encoding="UTF-8"?>\n'
         f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n')
