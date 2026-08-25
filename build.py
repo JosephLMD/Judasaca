@@ -7,8 +7,8 @@ Todo el contenido vive aqui arriba, en OBRAS, EXPOS y PRENSA. Se corre
 es que la barra, el pie y las etiquetas de Google quedan identicas en todas
 las paginas: no hay forma de que una quede desactualizada.
 
-Para poner un boton de compra: rellena 'buy' en la obra con el enlace de
-pago de Stripe. Si esta vacio, la obra muestra solo 'Inquire'.
+Para marcar una obra como vendida: pon vendida=True. Toda obra que no este
+vendida lleva boton de compra; el precio lo decide el Worker, no esta pagina.
 """
 import os, re, html
 
@@ -28,13 +28,12 @@ FIRMADOR = 'https://judasaca-bold.judasaca-art.workers.dev'
 # son unos 1.487 dolares.
 #
 # YA NO ESCONDE NINGUN BOTON. Por decision de Juan, toda obra que no este
-# vendida se puede comprar de una. El numero se queda aqui escrito porque el
-# limite existe de verdad: por encima de el, la tarjeta la rechaza Bold, no
-# nosotros. PSE aguanta hasta 10.000.000 COP y si pasa, pero PSE es solo para
-# cuentas colombianas, y quien compra un cuadro de 1.950 casi nunca lo es.
+# vendida se puede comprar de una.
 #
-# O sea: mientras Bold no suba el limite (soporte.online@bold.co), las seis
-# obras de 1.950 se pueden intentar pagar y la tarjeta va a fallar al final.
+# Comprobado el 25/08/2026: pasarse del tope NO da el error BTN-002. Bold
+# muestra una pantalla distinta que dice "monto maximo excedido". Asi que el
+# tope no era la causa de la falla que vimos, y este numero queda solo como
+# dato: subirlo se pide a soporte.online@bold.co.
 TOPE_TARJETA_USD = 1487
 
 # ── formulario de contacto ───────────────────────────────────────────────
@@ -46,8 +45,8 @@ LLAVE_FORM = '511aafa4-63bd-453c-a671-8825c5104c7a'
 REEL = 'https://www.instagram.com/reel/DXqQrk9l-U-/'
 
 # ── las obras ────────────────────────────────────────────────────────────
-# 'buy' vacio = solo boton Inquire. Al pegar un enlace de Stripe aparece
-# tambien el boton Buy, con Apple Pay y Google Pay incluidos.
+# El campo 'buy' quedo de la epoca de Stripe y ya no se usa: hoy el cobro lo
+# arma el Worker a partir del slug. vendida=True es lo unico que apaga la venta.
 OBRAS = [
  dict(slug='oil-city-woodstock',   titulo='Oil City Woodstock',
       tec='Acrylics and oil stick on canvas', med='100 × 100 cm', usd=1950, buy='', vendida=False),
@@ -464,14 +463,21 @@ PIE = f'''
    se cobra y lo firma. Un precio que mande el atacante no vale nada aunque
    venga firmado, porque estaria firmando su propia mentira. */
 window.JUDPAGO = (function(){{
-  var libreria = false, abriendo = false;
+  var libreria = null, abriendo = false;
 
+  /* Devuelve una promesa que solo se cumple cuando la libreria esta lista de
+     verdad. Se guarda para que dos clics no la carguen dos veces. */
   function cargarLibreria(){{
-    if (libreria) return;
-    libreria = true;
-    var s = document.createElement('script');
-    s.src = 'https://checkout.bold.co/library/boldPaymentButton.js';
-    document.head.appendChild(s);
+    if (libreria) return libreria;
+    libreria = new Promise(function(ok, mal){{
+      if (window.BoldCheckout) return ok();
+      var s = document.createElement('script');
+      s.src = 'https://checkout.bold.co/library/boldPaymentButton.js';
+      s.onload = function(){{ window.BoldCheckout ? ok() : mal(); }};
+      s.onerror = mal;
+      document.head.appendChild(s);
+    }});
+    return libreria;
   }}
 
   /* Se recuerda la orden para que la pagina de gracias sepa que se acaba de
@@ -488,40 +494,39 @@ window.JUDPAGO = (function(){{
     }} catch(e) {{}}
   }}
 
-  /* Pinta el boton de Bold dentro de 'destino' y lo dispara solo. Si el clic
-     automatico no prende, el boton de Bold se queda ahi visible y el comprador
-     lo aprieta: nunca queda un hueco muerto. */
+  /* Abre la pasarela directamente, sin dibujar ningun boton de Bold.
+
+     Antes esto inyectaba un <script data-bold-button> y luego le hacia clic
+     solo. Eso era una carrera perdida: la libreria de Bold busca esos scripts
+     cuando ELLA carga, asi que segun quien llegara primero unas veces salia el
+     boton y otras veces no salia nada. Con la API (new BoldCheckout().open())
+     no hay nada que esperar ni nada que adivinar: se abre y ya. */
   function abrir(destino, orden, origen){{
     if (abriendo) return;
     abriendo = true;
     recordar(orden);
-    cargarLibreria();
 
-    destino.innerHTML = '';
-    var s = document.createElement('script');
-    s.setAttribute('data-bold-button', 'dark-M');
-    s.setAttribute('data-api-key', '{LLAVE_IDENTIDAD}');
-    s.setAttribute('data-order-id', orden.orderId);
-    s.setAttribute('data-currency', orden.currency);
-    s.setAttribute('data-amount', orden.amount);
-    s.setAttribute('data-integrity-signature', orden.signature);
-    s.setAttribute('data-description', orden.description);
-    s.setAttribute('data-redirection-url', '{SITIO}/thanks.html');
-    s.setAttribute('data-origin-url', origen || '{SITIO}/art.html');
-    // Embedded: la pasarela abre encima del sitio y el comprador no se va.
-    s.setAttribute('data-render-mode', 'embedded');
-    destino.appendChild(s);
-    destino.scrollIntoView({{ block: 'center', behavior: 'smooth' }});
-
-    // En cuanto Bold termina de dibujar su boton, se aprieta por el comprador.
-    var intentos = 0;
-    var reloj = setInterval(function(){{
-      var b = destino.querySelector('button, [role=button], a');
-      if (b) {{ clearInterval(reloj); try {{ b.click(); }} catch(e) {{}} return; }}
-      if (++intentos > 40) clearInterval(reloj);   // 8 segundos y se rinde
-    }}, 200);
-
-    setTimeout(function(){{ abriendo = false; }}, 3000);
+    cargarLibreria().then(function(){{
+      new window.BoldCheckout({{
+        orderId: orden.orderId,
+        currency: orden.currency,
+        amount: orden.amount,
+        apiKey: '{LLAVE_IDENTIDAD}',
+        integritySignature: orden.signature,
+        description: orden.description,
+        redirectionUrl: '{SITIO}/thanks.html',
+        originUrl: origen || '{SITIO}/art.html',
+        // Embedded: la pasarela abre encima del sitio y el comprador no se va.
+        renderMode: 'embedded'
+      }}).open();
+      abriendo = false;
+    }}).catch(function(){{
+      abriendo = false;
+      if (destino) {{
+        destino.innerHTML = '<span class="fallo">Checkout could not open. '
+          + 'Write to <a href="mailto:{CORREO}">{CORREO}</a>.</span>';
+      }}
+    }});
   }}
 
   /* Una obra vendida se apaga entera: sello, ficha tachada y sin botones. */

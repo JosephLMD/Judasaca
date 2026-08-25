@@ -345,14 +345,21 @@
    se cobra y lo firma. Un precio que mande el atacante no vale nada aunque
    venga firmado, porque estaria firmando su propia mentira. */
 window.JUDPAGO = (function(){
-  var libreria = false, abriendo = false;
+  var libreria = null, abriendo = false;
 
+  /* Devuelve una promesa que solo se cumple cuando la libreria esta lista de
+     verdad. Se guarda para que dos clics no la carguen dos veces. */
   function cargarLibreria(){
-    if (libreria) return;
-    libreria = true;
-    var s = document.createElement('script');
-    s.src = 'https://checkout.bold.co/library/boldPaymentButton.js';
-    document.head.appendChild(s);
+    if (libreria) return libreria;
+    libreria = new Promise(function(ok, mal){
+      if (window.BoldCheckout) return ok();
+      var s = document.createElement('script');
+      s.src = 'https://checkout.bold.co/library/boldPaymentButton.js';
+      s.onload = function(){ window.BoldCheckout ? ok() : mal(); };
+      s.onerror = mal;
+      document.head.appendChild(s);
+    });
+    return libreria;
   }
 
   /* Se recuerda la orden para que la pagina de gracias sepa que se acaba de
@@ -369,40 +376,39 @@ window.JUDPAGO = (function(){
     } catch(e) {}
   }
 
-  /* Pinta el boton de Bold dentro de 'destino' y lo dispara solo. Si el clic
-     automatico no prende, el boton de Bold se queda ahi visible y el comprador
-     lo aprieta: nunca queda un hueco muerto. */
+  /* Abre la pasarela directamente, sin dibujar ningun boton de Bold.
+
+     Antes esto inyectaba un <script data-bold-button> y luego le hacia clic
+     solo. Eso era una carrera perdida: la libreria de Bold busca esos scripts
+     cuando ELLA carga, asi que segun quien llegara primero unas veces salia el
+     boton y otras veces no salia nada. Con la API (new BoldCheckout().open())
+     no hay nada que esperar ni nada que adivinar: se abre y ya. */
   function abrir(destino, orden, origen){
     if (abriendo) return;
     abriendo = true;
     recordar(orden);
-    cargarLibreria();
 
-    destino.innerHTML = '';
-    var s = document.createElement('script');
-    s.setAttribute('data-bold-button', 'dark-M');
-    s.setAttribute('data-api-key', '2heS56eZeRZj1n1B8NDPF9_LA2aDpNbyNBJOoG65qWI');
-    s.setAttribute('data-order-id', orden.orderId);
-    s.setAttribute('data-currency', orden.currency);
-    s.setAttribute('data-amount', orden.amount);
-    s.setAttribute('data-integrity-signature', orden.signature);
-    s.setAttribute('data-description', orden.description);
-    s.setAttribute('data-redirection-url', 'https://judasaca.art/thanks.html');
-    s.setAttribute('data-origin-url', origen || 'https://judasaca.art/art.html');
-    // Embedded: la pasarela abre encima del sitio y el comprador no se va.
-    s.setAttribute('data-render-mode', 'embedded');
-    destino.appendChild(s);
-    destino.scrollIntoView({ block: 'center', behavior: 'smooth' });
-
-    // En cuanto Bold termina de dibujar su boton, se aprieta por el comprador.
-    var intentos = 0;
-    var reloj = setInterval(function(){
-      var b = destino.querySelector('button, [role=button], a');
-      if (b) { clearInterval(reloj); try { b.click(); } catch(e) {} return; }
-      if (++intentos > 40) clearInterval(reloj);   // 8 segundos y se rinde
-    }, 200);
-
-    setTimeout(function(){ abriendo = false; }, 3000);
+    cargarLibreria().then(function(){
+      new window.BoldCheckout({
+        orderId: orden.orderId,
+        currency: orden.currency,
+        amount: orden.amount,
+        apiKey: '2heS56eZeRZj1n1B8NDPF9_LA2aDpNbyNBJOoG65qWI',
+        integritySignature: orden.signature,
+        description: orden.description,
+        redirectionUrl: 'https://judasaca.art/thanks.html',
+        originUrl: origen || 'https://judasaca.art/art.html',
+        // Embedded: la pasarela abre encima del sitio y el comprador no se va.
+        renderMode: 'embedded'
+      }).open();
+      abriendo = false;
+    }).catch(function(){
+      abriendo = false;
+      if (destino) {
+        destino.innerHTML = '<span class="fallo">Checkout could not open. '
+          + 'Write to <a href="mailto:contact@judasaca.art">contact@judasaca.art</a>.</span>';
+      }
+    });
   }
 
   /* Una obra vendida se apaga entera: sello, ficha tachada y sin botones. */
