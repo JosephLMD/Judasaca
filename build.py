@@ -55,7 +55,7 @@ OBRAS = [
  dict(slug='original-pastel-disney', titulo='Original Pastel Disney',
       tec='Acrylics and spray on canvas',     med='100 × 100 cm', usd=1950, buy='', vendida=False),
  dict(slug='nothing-stays-the-same', titulo='Nothing Stays the Same',
-      tec='Oil on canvas',                    med='100 × 120 cm', usd=1950, buy='', vendida=False),
+      tec='Oil on canvas',                    med='100 × 120 cm', usd=1950, buy='', vendida=True),
  # recorte=True: la obra es redonda y su foto no es cuadrada, asi que dentro del
  # marco cuadrado quedaba flotando con franjas arriba y abajo. Con recorte llena
  # el marco y se le quita lo que sobra por arriba y por abajo.
@@ -70,6 +70,12 @@ OBRAS = [
       tec='Acrylics and oil on canvas',       med='50 × 50 cm', usd=975, buy='', vendida=False),
  dict(slug='here-love',            titulo='Here, Love',
       tec='Acrylics and spray on canvas',     med='50 × 50 cm', usd=975, buy='', vendida=True),
+ dict(slug='cloud-city-snoops',    titulo='Cloud City Snoops',
+      tec='Oil on canvas',                    med='50 × 50 cm', usd=1000, buy='', vendida=False),
+ dict(slug='new-york-street-snoops', titulo='New York Street Snoops',
+      tec='Acrylics and spray on canvas',     med='50 × 50 cm', usd=975, buy='', vendida=False),
+ dict(slug='city-rounds-icon',     titulo='City Rounds Icon',
+      tec='Oil on canvas',                    med='50 × 50 cm', usd=1000, buy='', vendida=False),
 ]
 
 # ── exposiciones ─────────────────────────────────────────────────────────
@@ -746,8 +752,7 @@ art = cabeza(
         <div class="eti">Original works · {DISPONIBLES} available</div>
         <h2>Art</h2>
         <p>Every piece here is a single original, painted by hand and signed. Prices are
-          in US dollars and do not include shipping or framing; write and we will work
-          out the best way to get it to you.</p>
+          in US dollars. Worldwide shipping and framing is not included.</p>
       </div>
       <div class="obras">
 {''.join(tarjeta_obra(o) for o in OBRAS)}      </div>
@@ -757,11 +762,6 @@ art = cabeza(
   <section class="humo">
     <div class="wrap estrecho prosa">
       <div class="tit"><div class="eti">Buying</div><h2>How it works</h2></div>
-      <p>Anything marked <b>Sold</b> is gone; everything else on this page is available
-        right now. Pieces under the card limit can be paid for here directly, and the rest
-        go through Juan, who answers himself rather than through a form. Either way he
-        quotes shipping to your city and explains how the augmented layer works once the
-        canvas is on your wall.</p>
       <p>Works ship worldwide from Bogotá. Larger canvases usually travel rolled in a
         tube and are stretched on arrival, which is standard practice and keeps shipping
         sane.</p>
@@ -771,12 +771,8 @@ art = cabeza(
            HTTPS, y el monto se firma antes de salir. No se menciona ninguna
            certificacion que no sea nuestra. -->
       <h3>Paying securely</h3>
-      <p>Payment is completed inside <b>Bold's payment gateway</b>. Your card details are
-        entered there and never pass through this site, which means they are not seen,
-        received or stored by us at any point. The connection is encrypted end to end, and
-        the amount of every sale is signed before it reaches the gateway, so it cannot be
-        changed on the way. What we keep is what you choose to tell us: a name, an email,
-        and what you wrote. The <a href="privacy.html">privacy page</a> sets out the rest.</p>
+      <p>Payments are completed through Bold's payment gateway. We do not keep your card
+        details. More on the <a href="privacy.html">privacy page</a>.</p>
     </div>
   </section>
 </main>
