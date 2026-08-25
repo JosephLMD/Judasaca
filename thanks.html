@@ -58,15 +58,61 @@
 
 <main>
   <section>
-    <div class="wrap estrecho prosa" style="text-align:center">
+    <div class="wrap estrecho prosa gracias">
       <div class="tit centrado">
         <div class="eti">Order</div>
         <h2 id="titulo-gracias">Thank you</h2>
       </div>
-      <p id="mensaje-gracias">Juan will write to you from contact@judasaca.art to confirm the work and
-        arrange shipping to your city.</p>
-      <p class="chico" id="referencia-gracias" style="color:var(--tenue)"></p>
-      <p style="margin-top:34px"><a class="btn" href="art.html">Back to the works</a></p>
+      <p id="mensaje-gracias" style="text-align:center">Juan will write to you from contact@judasaca.art to
+        confirm the work and arrange shipping to your city.</p>
+      <p class="chico" id="referencia-gracias" style="color:var(--tenue);text-align:center"></p>
+
+      <!-- La direccion se pide AQUI y no antes de pagar. Antes del pago cada
+           campo es una excusa para no comprar; despues del pago el comprador ya
+           esta contento y quiere que le llegue el cuadro. -->
+      <div id="caja-envio" hidden>
+        <h3 style="margin-top:38px">Where should it go?</h3>
+        <p>Juan ships worldwide. Leave the address and he confirms the cost and the
+          date the same day.</p>
+        <form class="forma" id="form-envio">
+          <div class="campo">
+            <label for="e-nombre">Full name</label>
+            <input id="e-nombre" name="nombre" type="text" required autocomplete="name">
+          </div>
+          <div class="dos-campos">
+            <div class="campo">
+              <label for="e-email">Email</label>
+              <input id="e-email" name="email" type="email" required autocomplete="email">
+            </div>
+            <div class="campo">
+              <label for="e-telefono">Phone</label>
+              <input id="e-telefono" name="telefono" type="tel" required autocomplete="tel">
+            </div>
+          </div>
+          <div class="campo">
+            <label for="e-direccion">Address</label>
+            <input id="e-direccion" name="direccion" type="text" required autocomplete="street-address">
+          </div>
+          <div class="dos-campos">
+            <div class="campo">
+              <label for="e-ciudad">City</label>
+              <input id="e-ciudad" name="ciudad" type="text" required autocomplete="address-level2">
+            </div>
+            <div class="campo">
+              <label for="e-pais">Country</label>
+              <input id="e-pais" name="pais" type="text" required autocomplete="country-name">
+            </div>
+          </div>
+          <div class="campo">
+            <label for="e-notas">Anything Juan should know</label>
+            <input id="e-notas" name="notas" type="text" autocomplete="off">
+          </div>
+          <button class="btn lleno enviar" type="submit">Send shipping details</button>
+          <p class="aviso-forma" id="aviso-envio" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+
+      <p style="margin-top:34px;text-align:center"><a class="btn" href="art.html">Back to the works</a></p>
     </div>
   </section>
 </main>
@@ -79,11 +125,19 @@
   var t = document.getElementById('titulo-gracias');
   var m = document.getElementById('mensaje-gracias');
   var r = document.getElementById('referencia-gracias');
+  var caja = document.getElementById('caja-envio');
 
-  if (estado === 'approved') {
+  // Respaldo: si Bold no devolviera la referencia en la URL, se recupera la que
+  // el sitio guardo justo antes de abrir la pasarela.
+  var guardada = null;
+  try { guardada = JSON.parse(localStorage.getItem('judasaca-orden') || 'null'); } catch(e) {}
+  if (!orden && guardada && guardada.id) orden = guardada.id;
+
+  var aprobada = (estado === 'approved');
+
+  if (aprobada) {
     t.textContent = 'Thank you';
-    m.textContent = 'Your payment went through. Juan will write to you from contact@judasaca.art '
-      + 'to confirm the work and arrange shipping to your city.';
+    m.textContent = 'Your payment went through. One last thing and it is done.';
   } else if (estado === 'rejected' || estado === 'failed') {
     t.textContent = 'That payment did not go through';
     m.textContent = 'Nothing has been charged. You can try again, or write to contact@judasaca.art '
@@ -98,13 +152,59 @@
   /* El webhook de Bold puede tardar hasta diez minutos. El comprador esta aqui
      ahora. Se le avisa al Worker para que marque la obra enseguida; el Worker
      no se fia de esto y lo verifica contra Bold antes de hacer nada. */
-  if (orden && estado === 'approved' && window.fetch) {
+  if (orden && aprobada && window.fetch) {
     fetch('https://judasaca-bold.judasaca-art.workers.dev/confirmar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ orderId: orden })
     }).catch(function(){ });
+
+    // Lo pagado sale del carrito. Si no, sigue ahi tentando a pagarlo otra vez.
+    try {
+      var comprados = (guardada && guardada.slugs) || [];
+      var carro = JSON.parse(localStorage.getItem('judasaca-carro') || '[]');
+      localStorage.setItem('judasaca-carro', JSON.stringify(
+        carro.filter(function(s){ return comprados.indexOf(s) < 0; })));
+    } catch(e) {}
   }
+
+  if (!aprobada || !orden) return;
+  caja.hidden = false;
+
+  var f = document.getElementById('form-envio');
+  var aviso = document.getElementById('aviso-envio');
+  f.addEventListener('submit', function(e){
+    e.preventDefault();
+    var boton = f.querySelector('button[type=submit]');
+    boton.disabled = true;
+    aviso.className = 'aviso-forma';
+    aviso.textContent = 'Sending…';
+
+    var datos = { orderId: orden };
+    ['nombre','email','telefono','direccion','ciudad','pais','notas']
+      .forEach(function(k){ datos[k] = (f[k] && f[k].value || '').trim(); });
+
+    fetch('https://judasaca-bold.judasaca-art.workers.dev/datos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(datos)
+    })
+    .then(function(rr){ return rr.json(); })
+    .then(function(d){
+      if (!d || !d.ok) throw new Error('no');
+      f.innerHTML = '';
+      aviso.className = 'aviso-forma ok';
+      aviso.textContent = 'Got it. Juan has your address and will write from contact@judasaca.art '
+        + 'with the shipping date.';
+      f.appendChild(aviso);
+    })
+    .catch(function(){
+      boton.disabled = false;
+      aviso.className = 'aviso-forma mal';
+      aviso.textContent = 'That did not save. Please send your address to contact@judasaca.art '
+        + 'quoting the reference above.';
+    });
+  });
 })();
 </script>
 
@@ -141,9 +241,10 @@
   <div class="lista" id="carro-lista"></div>
   <div class="bajo">
     <div class="total"><span>Total</span><span id="carro-total">USD 0</span></div>
-    <a class="btn lleno" id="carro-pedir" href="#">Request these works</a>
-    <p class="nota">Sending this opens an email to Juan with the pieces you picked.
-      He replies himself, confirms availability and quotes shipping to your city.</p>
+    <div class="pagar-carro" id="carro-pagar"></div>
+    <button class="btn lleno" id="carro-pedir" type="button">Checkout</button>
+    <p class="nota" id="carro-nota">Payment opens on Bold's gateway. Card details are
+      entered there and never pass through this site. We ask where to ship afterwards.</p>
   </div>
 </aside>
 
@@ -227,7 +328,7 @@
   var bot=document.getElementById('carro'), num=document.getElementById('carro-n'),
       panel=document.getElementById('panel'), velo=document.getElementById('velo'),
       lista=document.getElementById('carro-lista'), total=document.getElementById('carro-total'),
-      pedir=document.getElementById('carro-pedir');
+      pedir=document.getElementById('carro-pedir'), nota=document.getElementById('carro-nota');
   if(!bot||!panel) return;
 
   function guardar(){ try{ localStorage.setItem(LLAVE, JSON.stringify(carro)); }catch(e){} }
@@ -238,10 +339,10 @@
     if(!carro.length){
       lista.innerHTML = '<p class="vacio">Nothing selected yet.</p>';
       total.textContent = dinero(0);
-      pedir.style.opacity = .4; pedir.style.pointerEvents = 'none';
+      pedir.disabled = true;
       return;
     }
-    pedir.style.opacity = 1; pedir.style.pointerEvents = '';
+    pedir.disabled = false;
     var suma = 0, h = '';
     carro.forEach(function(sl){
       var o = CAT[sl]; suma += o.usd;
@@ -253,10 +354,49 @@
     });
     lista.innerHTML = h;
     total.textContent = dinero(suma);
-    var cuerpo = 'Hi Juan, I am interested in these works:%0D%0A%0D%0A'
-      + carro.map(function(sl){ return '- '+CAT[sl].t+' ('+CAT[sl].m+') — '+dinero(CAT[sl].usd); }).join('%0D%0A')
-      + '%0D%0A%0D%0ATotal: '+dinero(suma)+'%0D%0A%0D%0ACould you confirm availability and shipping?';
-    pedir.href = 'mailto:contact@judasaca.art?subject=Enquiry%20from%20judasaca.art&body='+cuerpo;
+  }
+
+  /* Checkout de verdad: el carrito cobra, no manda un correo. Se firma la
+     lista contra el Worker (que suma el total y decide el precio) y se abre
+     Bold por el total, en una sola orden. */
+  function cobrar(){
+    if (!carro.length || !window.fetch || !window.JUDPAGO) return;
+    pedir.disabled = true;
+    pedir.textContent = 'One moment…';
+
+    fetch('https://judasaca-bold.judasaca-art.workers.dev/firma', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ modo: 'carro', slugs: carro })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (!d || !d.carro) throw new Error('sin-orden');
+
+      // Si algo se vendio mientras el comprador miraba, el Worker lo deja
+      // fuera de la firma. Se le dice, se le quita del carrito y se cobra lo
+      // que si esta: nadie paga por un cuadro que ya no existe.
+      var firmadas = d.carro.slugs || [];
+      var caidas = carro.filter(function(s){ return firmadas.indexOf(s) < 0; });
+      if (caidas.length) {
+        carro = firmadas.slice();
+        guardar(); pintar();
+        nota.textContent = caidas.length === 1
+          ? CAT[caidas[0]].t + ' was just sold and has been removed. Paying for the rest.'
+          : caidas.length + ' works were just sold and have been removed. Paying for the rest.';
+        nota.className = 'nota aviso';
+      }
+
+      pedir.style.display = 'none';
+      window.JUDPAGO.abrir(document.getElementById('carro-pagar'), d.carro, location.href);
+    })
+    .catch(function(){
+      pedir.disabled = false;
+      pedir.textContent = 'Checkout';
+      nota.className = 'nota aviso';
+      nota.innerHTML = 'Checkout is not responding. Write to '
+        + '<a href="mailto:contact@judasaca.art">contact@judasaca.art</a> and Juan will take it from there.';
+    });
   }
 
   function abrir(){ panel.classList.add('abierto'); velo.classList.add('abierto');
@@ -265,6 +405,7 @@
     panel.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
 
   bot.addEventListener('click', function(){ pintar(); abrir(); });
+  pedir.addEventListener('click', cobrar);
   velo.addEventListener('click', cerrar);
   document.getElementById('cerrar-carro').addEventListener('click', cerrar);
   document.addEventListener('keydown', function(e){
@@ -288,21 +429,20 @@
   pintar();
 })();
 
-/* ── Compra ─────────────────────────────────────────────────────────────
-   Solo corre en paginas con huecos .pagar (hoy, la de obras).
+/* ── Pago ───────────────────────────────────────────────────────────────
+   Un solo motor de pago para toda la pagina: lo usan los botones Buy de cada
+   obra y tambien el carrito.
 
-   Flujo: el Worker firma → aparece "Buy" → el comprador deja sus datos de
-   envio → se guardan → recien ahi se pinta el boton de Bold y paga.
+   Flujo, corto a proposito: clic en Buy -> la pasarela de Bold se abre encima
+   del sitio -> paga. Nada de formularios antes. La direccion de envio se pide
+   DESPUES, en la pagina de gracias, cuando la plata ya entro y el comprador
+   no puede arrepentirse a mitad de camino por tener que teclear.
 
-   El navegador NUNCA manda el precio: manda slugs, y el Worker decide. Si
-   algo de esto falla, las obras conservan su boton de Inquire y nadie queda
-   mirando un boton muerto. */
-(function(){
-  var huecos = [].slice.call(document.querySelectorAll('.pagar[data-obra]'));
-  if (!huecos.length || !window.fetch) return;
-
-  var slugs = huecos.map(function(h){ return h.getAttribute('data-obra'); });
-  var libreria = false;
+   El navegador NUNCA manda el precio: manda slugs, y el Worker decide cuanto
+   se cobra y lo firma. Un precio que mande el atacante no vale nada aunque
+   venga firmado, porque estaria firmando su propia mentira. */
+window.JUDPAGO = (function(){
+  var libreria = false, abriendo = false;
 
   function cargarLibreria(){
     if (libreria) return;
@@ -312,33 +452,59 @@
     document.head.appendChild(s);
   }
 
-  fetch('https://judasaca-bold.judasaca-art.workers.dev/firma', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ slugs: slugs })
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(d){
-    // El Worker manda la lista real de vendidas. Si una se vendio despues de
-    // publicar la pagina, se marca aqui sin tener que reconstruir el sitio.
-    if (d && d.vendidas) marcarVendidas(d.vendidas);
-    if (!d || !d.obras) return;
+  /* Se recuerda la orden para que la pagina de gracias sepa que se acaba de
+     pagar: ahi se le pide la direccion y se marcan las obras como vendidas. */
+  function recordar(orden){
+    try {
+      localStorage.setItem('judasaca-orden', JSON.stringify({
+        id: orden.orderId,
+        slugs: orden.slugs || [],
+        amount: orden.amount,
+        description: orden.description,
+        t: Date.now()
+      }));
+    } catch(e) {}
+  }
 
-    huecos.forEach(function(hueco){
-      var o = d.obras[hueco.getAttribute('data-obra')];
-      if (!o) return;
-      var b = document.createElement('button');
-      b.className = 'btn lleno';
-      b.textContent = 'Buy';
-      b.addEventListener('click', function(){ pedirDatos(hueco, o); });
-      hueco.appendChild(b);
-    });
-  })
-  .catch(function(){ });
+  /* Pinta el boton de Bold dentro de 'destino' y lo dispara solo. Si el clic
+     automatico no prende, el boton de Bold se queda ahi visible y el comprador
+     lo aprieta: nunca queda un hueco muerto. */
+  function abrir(destino, orden, origen){
+    if (abriendo) return;
+    abriendo = true;
+    recordar(orden);
+    cargarLibreria();
+
+    destino.innerHTML = '';
+    var s = document.createElement('script');
+    s.setAttribute('data-bold-button', 'dark-M');
+    s.setAttribute('data-api-key', '2heS56eZeRZj1n1B8NDPF9_LA2aDpNbyNBJOoG65qWI');
+    s.setAttribute('data-order-id', orden.orderId);
+    s.setAttribute('data-currency', orden.currency);
+    s.setAttribute('data-amount', orden.amount);
+    s.setAttribute('data-integrity-signature', orden.signature);
+    s.setAttribute('data-description', orden.description);
+    s.setAttribute('data-redirection-url', 'https://judasaca.art/thanks.html');
+    s.setAttribute('data-origin-url', origen || 'https://judasaca.art/art.html');
+    // Embedded: la pasarela abre encima del sitio y el comprador no se va.
+    s.setAttribute('data-render-mode', 'embedded');
+    destino.appendChild(s);
+    destino.scrollIntoView({ block: 'center', behavior: 'smooth' });
+
+    // En cuanto Bold termina de dibujar su boton, se aprieta por el comprador.
+    var intentos = 0;
+    var reloj = setInterval(function(){
+      var b = destino.querySelector('button, [role=button], a');
+      if (b) { clearInterval(reloj); try { b.click(); } catch(e) {} return; }
+      if (++intentos > 40) clearInterval(reloj);   // 8 segundos y se rinde
+    }, 200);
+
+    setTimeout(function(){ abriendo = false; }, 3000);
+  }
 
   /* Una obra vendida se apaga entera: sello, ficha tachada y sin botones. */
   function marcarVendidas(lista){
-    lista.forEach(function(slug){
+    (lista || []).forEach(function(slug){
       var hueco = document.querySelector('.pagar[data-obra="' + slug + '"]');
       if (!hueco) return;
       var obra = hueco.closest('.obra');
@@ -358,97 +524,45 @@
     });
   }
 
-  /* Los datos de envio se piden ANTES de pagar. Bold entrega el correo del
-     comprador, pero no dice a donde mandar un cuadro de un metro. */
-  function pedirDatos(hueco, o){
-    if (document.getElementById('caja-envio')) return;
+  return { abrir: abrir, marcarVendidas: marcarVendidas, firmador: 'https://judasaca-bold.judasaca-art.workers.dev' };
+})();
 
-    var caja = document.createElement('div');
-    caja.className = 'velo abierto';
-    caja.id = 'caja-envio';
-    caja.innerHTML =
-      '<div class="envio" role="dialog" aria-modal="true" aria-label="Shipping details">'
-      + '<button class="x" type="button" aria-label="Close">&times;</button>'
-      + '<h3>' + o.description + '</h3>'
-      + '<p class="que">USD ' + Number(o.amount).toLocaleString('en-US')
-      + ' · where should it go?</p>'
-      + '<form id="form-envio">'
-      + campo('nombre', 'Full name', 'text', true, 'name')
-      + campo('email', 'Email', 'email', true, 'email')
-      + campo('telefono', 'Phone', 'tel', true, 'tel')
-      + campo('direccion', 'Address', 'text', true, 'street-address')
-      + '<div class="dos-campos">'
-      + campo('ciudad', 'City', 'text', true, 'address-level2')
-      + campo('pais', 'Country', 'text', true, 'country-name')
-      + '</div>'
-      + campo('notas', 'Anything we should know', 'text', false, 'off')
-      + '<button class="btn lleno" type="submit">Continue to payment</button>'
-      + '<p class="nota">Next step is Bold\'s payment gateway. Your card details '
-      + 'are entered there and never pass through this site.</p>'
-      + '</form></div>';
-    document.body.appendChild(caja);
-    document.body.style.overflow = 'hidden';
+/* ── Buy en cada obra ───────────────────────────────────────────────────
+   Solo corre en paginas con huecos .pagar (hoy, la de obras). */
+(function(){
+  var huecos = [].slice.call(document.querySelectorAll('.pagar[data-obra]'));
+  if (!huecos.length || !window.fetch) return;
 
-    function cerrar(){
-      caja.remove();
-      document.body.style.overflow = '';
-    }
-    caja.querySelector('.x').addEventListener('click', cerrar);
-    caja.addEventListener('click', function(e){ if (e.target === caja) cerrar(); });
+  var slugs = huecos.map(function(h){ return h.getAttribute('data-obra'); });
 
-    caja.querySelector('#form-envio').addEventListener('submit', function(e){
-      e.preventDefault();
-      var f = e.target;
-      var datos = { orderId: o.orderId, slug: hueco.getAttribute('data-obra') };
-      ['nombre','email','telefono','direccion','ciudad','pais','notas']
-        .forEach(function(k){ datos[k] = (f[k] && f[k].value || '').trim(); });
+  fetch('https://judasaca-bold.judasaca-art.workers.dev/firma', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ slugs: slugs })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    // El Worker manda la lista real de vendidas. Si una se vendio despues de
+    // publicar la pagina, se marca aqui sin tener que reconstruir el sitio.
+    if (d && d.vendidas) window.JUDPAGO.marcarVendidas(d.vendidas);
+    if (!d || !d.obras) return;
 
-      var boton = f.querySelector('button[type=submit]');
-      boton.disabled = true;
-      boton.textContent = 'One moment…';
-
-      // Si el guardado falla no se bloquea la compra: es peor perder la venta
-      // que perder la direccion, que siempre se puede pedir por correo.
-      fetch('https://judasaca-bold.judasaca-art.workers.dev/datos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datos)
-      }).catch(function(){ }).then(function(){
-        cerrar();
-        abrirBold(hueco, o, datos);
+    huecos.forEach(function(hueco){
+      var o = d.obras[hueco.getAttribute('data-obra')];
+      if (!o) return;
+      o.slugs = [hueco.getAttribute('data-obra')];
+      var b = document.createElement('button');
+      b.className = 'btn lleno';
+      b.textContent = 'Buy';
+      b.addEventListener('click', function(){
+        b.disabled = true;
+        b.textContent = 'Opening…';
+        window.JUDPAGO.abrir(hueco, o, location.href);
       });
+      hueco.appendChild(b);
     });
-  }
-
-  function campo(nombre, etiqueta, tipo, obligatorio, autocompletar){
-    return '<div class="campo"><label for="e-' + nombre + '">' + etiqueta + '</label>'
-      + '<input id="e-' + nombre + '" name="' + nombre + '" type="' + tipo + '"'
-      + (obligatorio ? ' required' : '')
-      + ' autocomplete="' + autocompletar + '"></div>';
-  }
-
-  function abrirBold(hueco, o, datos){
-    cargarLibreria();
-    hueco.innerHTML = '';
-    var s = document.createElement('script');
-    s.setAttribute('data-bold-button', 'dark-M');
-    s.setAttribute('data-api-key', '2heS56eZeRZj1n1B8NDPF9_LA2aDpNbyNBJOoG65qWI');
-    s.setAttribute('data-order-id', o.orderId);
-    s.setAttribute('data-currency', o.currency);
-    s.setAttribute('data-amount', o.amount);
-    s.setAttribute('data-integrity-signature', o.signature);
-    s.setAttribute('data-description', o.description);
-    s.setAttribute('data-redirection-url', 'https://judasaca.art/thanks.html');
-    s.setAttribute('data-origin-url', 'https://judasaca.art/art.html');
-    // Embedded: la pasarela abre encima del sitio y el comprador no se va.
-    s.setAttribute('data-render-mode', 'embedded');
-    // Se le pasan los datos ya escritos para que no los teclee dos veces.
-    s.setAttribute('data-customer-data', JSON.stringify({
-      email: datos.email, fullName: datos.nombre, phone: datos.telefono
-    }));
-    hueco.appendChild(s);
-    hueco.scrollIntoView({ block: 'center', behavior: 'smooth' });
-  }
+  })
+  .catch(function(){ });
 })();
 </script>
 </body>
