@@ -16,6 +16,8 @@ RUTA = os.path.dirname(os.path.abspath(__file__))
 SITIO = 'https://judasaca.art'
 CORREO = 'contact@judasaca.art'
 IG = 'https://www.instagram.com/judasaca'
+TIKTOK = 'https://www.tiktok.com/@judasaca'
+IG_ESTUDIO = 'https://www.instagram.com/303artstudio'
 
 # ── pagos con Bold ───────────────────────────────────────────────────────
 # La llave de IDENTIDAD es publica y va en el HTML: solo dice a que comercio
@@ -48,6 +50,9 @@ REEL = 'https://www.instagram.com/reel/DXqQrk9l-U-/'
 # El campo 'buy' quedo de la epoca de Stripe y ya no se usa: hoy el cobro lo
 # arma el Worker a partir del slug. vendida=True es lo unico que apaga la venta.
 OBRAS = [
+ dict(slug='rendered-reality',     titulo='Rendered Reality',
+      tec='Mixed media on canvas',            med='75 × 100 cm', usd=2200, buy='', vendida=False,
+      nota='Exhibited at Jutta Gallery, New York City · Space Between Worlds'),
  dict(slug='oil-city-woodstock',   titulo='Oil City Woodstock',
       tec='Acrylics and oil stick on canvas', med='100 × 100 cm', usd=1950, buy='', vendida=False),
  dict(slug='sunday-snoops',        titulo='Sunday, Snoops',
@@ -55,7 +60,7 @@ OBRAS = [
  dict(slug='pop-art-rat',          titulo='Pop Art Rat',
       tec='Acrylics and oil stick on canvas', med='100 × 100 cm', usd=1950, buy='', vendida=True),
  dict(slug='mango-og',             titulo='Mango OG',
-      tec='Acrylics and oil stick on canvas', med='100 × 100 cm', usd=1950, buy='', vendida=False),
+      tec='Acrylics and oil stick on canvas', med='95 × 95 cm', usd=1950, buy='', vendida=False),
  dict(slug='original-pastel-disney', titulo='Original Pastel Disney',
       tec='Acrylics and spray on canvas',     med='100 × 100 cm', usd=1950, buy='', vendida=False),
  dict(slug='nothing-stays-the-same', titulo='Nothing Stays the Same',
@@ -67,8 +72,6 @@ OBRAS = [
       tec='Acrylics and spray on canvas',     med='80 cm diameter', usd=1235, buy='',
       vendida=False, recorte=True),
  dict(slug='smiling-ratsquiat-blue-crown', titulo='Smiling Ratsquiat, Blue Crown',
-      tec='Acrylics and spray on canvas',     med='50 × 50 cm', usd=975, buy='', vendida=False),
- dict(slug='smiling-ratsquiat-yellow-crown', titulo='Smiling Ratsquiat, Yellow Crown',
       tec='Acrylics and spray on canvas',     med='50 × 50 cm', usd=975, buy='', vendida=False),
  dict(slug='oil-woodstock',        titulo='Oil Woodstock',
       tec='Acrylics and oil on canvas',       med='50 × 50 cm', usd=975, buy='', vendida=False),
@@ -88,8 +91,8 @@ OBRAS = [
       ancha=True),
  dict(slug='broken-icon',          titulo='Broken Icon',
       tec='Acrylics and oil stick on canvas', med='100 × 100 cm', usd=1950, buy='', vendida=False),
- dict(slug='abstract-reality-icon', titulo='Abstract Reality Icon',
-      tec='Oil crayon on paper',              med='35 × 25 cm', usd=600, buy='', vendida=False),
+ dict(slug='smiling-ratsquiat-yellow-crown', titulo='Smiling Ratsquiat, Yellow Crown',
+      tec='Acrylics and spray on canvas',     med='50 × 50 cm', usd=975, buy='', vendida=False),
 ]
 
 # ── la tienda ────────────────────────────────────────────────────────────
@@ -99,28 +102,32 @@ OBRAS = [
 #
 # Las ocho son crayon de oleo sobre papel, confirmado por Juan.
 TIENDA = [
- dict(slug='out-in-the-city-woodstock', titulo='Out in the City, Woodstock',
-      tec='Oil crayon on paper',  med='45 × 40 cm', usd=250, buy='', vendida=False),
- dict(slug='colour-pop-snoops',    titulo='Colour Pop Snoops',
-      tec='Oil crayon on paper',  med='45 × 40 cm', usd=250, buy='', vendida=False),
- dict(slug='icon-kiss',            titulo='Icon Kiss',
-      tec='Oil crayon on paper',  med='45 × 40 cm', usd=250, buy='', vendida=False),
- dict(slug='palometa-tribute',     titulo='Palometa Tribute',
-      tec='Oil crayon on paper',  med='45 × 40 cm', usd=250, buy='', vendida=False),
- dict(slug='everything-will-be-ok-jules', titulo='Everything Will Be OK, Jules',
-      tec='Oil crayon on paper',  med='45 × 40 cm', usd=250, buy='', vendida=False),
  dict(slug='woodstocks-on-fire',   titulo='Woodstock’s on Fire',
-      tec='Oil crayon on paper',  med='45 × 40 cm', usd=250, buy='', vendida=False),
- dict(slug='city-of-rats',         titulo='City of Rats',
-      tec='Oil crayon on paper',  med='45 × 40 cm', usd=250, buy='', vendida=False),
+      tec='Oil pastel on high quality cotton paper', med='Framed 45 × 40 cm', usd=250, buy='', vendida=False),
  dict(slug='out-in-the-beach-rat', titulo='Out in the Beach Rat',
-      tec='Oil crayon on paper',  med='45 × 40 cm', usd=250, buy='', vendida=False),
+      tec='Acrylic markers on USPS Label 228 sticker', med='Framed', usd=180, buy='', vendida=False),
+ dict(slug='out-in-the-city-woodstock', titulo='Out in the City, Woodstock',
+      tec='Oil pastel on high quality cotton paper', med='Framed 45 × 40 cm', usd=250, buy='', vendida=False),
+ dict(slug='colour-pop-snoops',    titulo='Colour Pop Snoops',
+      tec='Oil pastel on high quality cotton paper', med='Framed 45 × 40 cm', usd=250, buy='', vendida=False),
+ dict(slug='icon-kiss',            titulo='Icon Kiss',
+      tec='Oil pastel on high quality cotton paper', med='Framed 45 × 40 cm', usd=250, buy='', vendida=False),
+ dict(slug='palometa-tribute',     titulo='Palometa Tribute',
+      tec='Oil pastel on high quality cotton paper', med='Framed 45 × 40 cm', usd=250, buy='', vendida=False),
+ dict(slug='city-of-rats',         titulo='City of Rats',
+      tec='Oil pastel on high quality cotton paper', med='Framed 45 × 40 cm', usd=250, buy='', vendida=False),
+ # OJO JUAN: de esta no te acordabas el material. Lo puse generico. Se corrige aqui.
+ dict(slug='abstract-reality-icon', titulo='Abstract Reality Icon',
+      tec='Mixed media on canvas', med='35 × 25 cm', usd=600, buy='', vendida=False),
+ dict(slug='everything-will-be-ok-jules', titulo='Everything Will Be OK, Jules',
+      tec='Oil pastel on high quality cotton paper', med='Framed 45 × 40 cm', usd=250, buy='', vendida=False),
 ]
+
 
 # Las medias se venden como un solo producto: las dos parejas juntas. Cada
 # pareja sale de un cuadro distinto, y esos dos cuadros se muestran al lado
 # en la pagina. Por eso van aparte y no dentro de TIENDA.
-MEDIAS = dict(slug='judasaca-socks', titulo='JUDASACA Socks',
+MEDIAS = dict(slug='judasaca-socks', titulo='Broken Icon × Bitcoin Rat Socks',
               tec='Printed from two original paintings',
               med='Two pairs', usd=30, buy='', vendida=False)
 
@@ -283,13 +290,16 @@ PIE = f'''
       <a href="shop.html">Shop</a>
       <a href="cv.html">CV</a>
     </div>
-    <div class="col"><b>Studio</b>
+    <div class="col"><b><a class="tit-enlace" href="{IG_ESTUDIO}" target="_blank"
+      rel="noopener">303 Studio</a></b>
       <a href="about.html">About the artist</a>
       <a href="contact.html">Contact</a>
       <a href="mailto:{CORREO}">{CORREO}</a>
     </div>
     <div class="col"><b>Follow</b>
-      <a href="{IG}" rel="noopener">Instagram · @judasaca</a>
+      <a href="{IG}" target="_blank" rel="noopener">Instagram · @judasaca</a>
+      <a href="{TIKTOK}" target="_blank" rel="noopener">TikTok · @judasaca</a>
+      <a href="{IG_ESTUDIO}" target="_blank" rel="noopener">Instagram · @303artstudio</a>
     </div>
     <div class="col fin">JUDASACA · Juan Salazar<br>Bogotá, Colombia<br>
       <span style="opacity:.7">nothing stays the same</span>
@@ -702,6 +712,11 @@ def tarjeta_obra(o, mini=True):
         acciones = f'{comprar}{carrito}'
         sello, clase_obra, clase_marco = '', '', ''
 
+    # Una obra puede traer 'nota': hoy la usa Rendered Reality para decir
+    # donde se expuso. Va debajo de la ficha, en chico.
+    nota = ('\n            <div class="expo">' + html.escape(o['nota']) + '</div>'
+            if o.get('nota') else '')
+
     if o.get('recorte'):
         clase_marco += ' recorte'
     # Una obra panoramica ocupa dos celdas de la reja y su marco deja de ser
@@ -723,7 +738,7 @@ def tarjeta_obra(o, mini=True):
           </a>
           <figcaption>
             <div class="linea"><span class="t">{html.escape(o['titulo'])}</span>
-              <span class="f">· {o['med']} ·</span> {precio}</div>
+              <span class="f">· {o['med']} ·</span> {precio}</div>{nota}
             <div class="acciones">{acciones}</div>
           </figcaption>
         </figure>
@@ -905,58 +920,74 @@ art = cabeza(
 tienda_html = ''.join(tarjeta_obra(o) for o in TIENDA)
 medias_html = tarjeta_obra(MEDIAS)
 
+# Tres lienzos de muestra para el bloque que lleva a la pagina de arte.
+MUESTRA = ['rendered-reality', 'oil-city-woodstock', 'city-famous-rat']
+_por_slug = {o['slug']: o for o in OBRAS}
+muestra_html = ''.join(
+    f'''          <a class="lienzo" href="art.html">
+            <img src="img/{s}-sm.webp" alt="{html.escape(_por_slug[s]["titulo"])}" loading="lazy">
+          </a>
+''' for s in MUESTRA if s in _por_slug)
+
 shop = cabeza(
   'Shop · JUDASACA',
-  'Original works on paper and JUDASACA socks. Shipped worldwide.',
-  'shop.html', og='img/out-in-the-city-woodstock-sm.webp') + f'''
+  'Socks, original works on paper and canvases by JUDASACA. Shipped worldwide.',
+  'shop.html', og='img/judasaca-socks-sm.webp') + f'''
 <main>
+
   <section>
     <div class="wrap">
       <div class="tit">
-        <div class="eti">Shop</div>
-        <h2>Small originals</h2>
-        <p>Same hand, same rats, smaller paper. Every piece here is a one-off, not a print:
-          when one goes, it is gone. The large canvases live on the
-          <a href="art.html" style="color:inherit">Art</a> page.</p>
+        <div class="eti">Merch</div>
+        <h2>Broken Icon × Bitcoin Rat Socks</h2>
+        <p>Two pairs, sold together, in a box built from the same two paintings.</p>
+      </div>
+      <div class="medias-prod">
+{medias_html}      </div>
+    </div>
+  </section>
+
+  <section class="humo">
+    <div class="wrap">
+      <div class="tit">
+        <div class="eti">On paper</div>
+        <h2>Art</h2>
       </div>
       <div class="obras">
 {tienda_html}      </div>
     </div>
   </section>
 
-  <section class="medias">
+  <section>
     <div class="wrap">
       <div class="tit">
-        <div class="eti">Wearable</div>
-        <h2>The socks</h2>
-        <p>Two pairs, sold together, in a box built from the same two paintings. Each pair
-          is a painting that already existed, one light and one dark. You are not buying a
-          logo on a sock, you are buying the painting on a sock.</p>
+        <div class="eti">On canvas</div>
+        <h2>Canvases</h2>
       </div>
+      <div class="lienzos">
+{muestra_html}      </div>
+      <p style="margin-top:26px"><a class="btn" href="art.html">See the canvases</a></p>
+    </div>
+  </section>
 
-      <div class="medias-caja">
-        <div class="medias-prod">
-{medias_html}        </div>
-
-        <div class="medias-origen">
-          <h3>Where each pair comes from</h3>
-          <div class="par">
-            <figure><img src="img/socks-white-origin-sm.webp" alt="The light painting the white pair was taken from" loading="lazy"><figcaption>In the studio</figcaption></figure>
-            <span class="flecha" aria-hidden="true">&rarr;</span>
-            <figure><img src="img/socks-white-sm.webp" alt="The white pair" loading="lazy"><figcaption>The white pair</figcaption></figure>
-          </div>
-          <div class="par">
-            <figure><a href="art.html"><img src="img/broken-icon-sm.webp" alt="Broken Icon, the painting the black pair was taken from" loading="lazy"></a><figcaption>Broken Icon</figcaption></figure>
-            <span class="flecha" aria-hidden="true">&rarr;</span>
-            <figure><img src="img/socks-black-sm.webp" alt="The black pair" loading="lazy"><figcaption>The black pair</figcaption></figure>
-          </div>
-          <p class="nota-origen">The light painting stays in the studio and is not for sale.
-            The dark one is <a href="art.html">Broken Icon</a>, and that one you can buy.
-            The socks arrive in a box built from both.</p>
-        </div>
+  <section class="humo">
+    <div class="wrap">
+      <div class="tit">
+        <div class="eti">Prints</div>
+        <h2>Prints</h2>
+      </div>
+      <div class="pronto">
+        <h3>Coming soon</h3>
+        <p>Editions of the works you have just seen, at a size and a price that fit a
+          first wall. If you want to know the day they open, write and you will be told
+          before anyone else.</p>
+        <p style="margin-top:24px">
+          <a class="btn" href="mailto:{CORREO}?subject=Prints%20—%20let%20me%20know%20when%20they%20open">Tell me when they open</a>
+        </p>
       </div>
     </div>
   </section>
+
 </main>
 ''' + PIE
 
