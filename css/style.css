@@ -114,11 +114,18 @@ section.humo{background:var(--humo)}
 /* ── rejilla de obras ── */
 .obras{display:grid;grid-template-columns:repeat(3,1fr);gap:38px 30px}
 .obra figure{margin:0}
-.obra .marco{background:var(--humo);overflow:hidden;display:block;
-  aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;padding:22px}
-.obra img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;
+/* Las fichas de la reja ya vienen cuadradas y centradas en la obra desde
+   recortar.py, asi que aqui basta con que llenen el marco. No se recorta
+   nada: la imagen y el marco tienen la misma proporcion. */
+.obra .marco{background:var(--humo);overflow:hidden;
+  aspect-ratio:1/1;display:block;padding:0}
+.obra img{width:100%;height:100%;max-width:none;max-height:none;object-fit:contain;
   transition:transform .6s cubic-bezier(.2,.6,.2,1)}
 .obra:hover img{transform:scale(1.035)}
+/* Obra panoramica: dos celdas de ancho y marco 2:1. En celular la reja ya es
+   de una columna, asi que solo cambia la proporcion del marco. */
+.obra.ancha{grid-column:1 / -1}
+.obra.ancha .marco{aspect-ratio:2/1}
 .obra figcaption{padding-top:15px;text-align:center}
 .obra .linea{font-size:14px;line-height:1.5}
 .obra .linea .t{font-weight:600}
@@ -158,26 +165,35 @@ section.humo{background:var(--humo)}
 .pagar{display:inline-flex;align-items:center;line-height:0}
 .pagar:empty{display:none}
 
-/* ── Datos de envio antes de pagar ──
-   Se pide aqui y no despues: Bold entrega el correo del comprador, pero no
-   dice a donde mandar un cuadro de un metro. */
-.envio{background:#fff;max-width:520px;width:calc(100% - 36px);margin:auto;
-  padding:30px 32px 34px;position:relative;max-height:88vh;overflow-y:auto}
+/* Ya no hay formulario antes de pagar: la direccion se pide en la pagina de
+   gracias, con el cobro hecho. Lo unico que sobrevive de aquel modal es el
+   velo, que sigue siendo el fondo oscuro del carrito. */
 .velo.abierto{display:flex;align-items:center;justify-content:center;padding:18px}
-.envio .x{position:absolute;top:12px;right:16px;background:none;border:0;font-size:26px;
-  line-height:1;cursor:pointer;color:var(--tinta);padding:4px}
-.envio h3{font-size:20px;font-weight:800;letter-spacing:-.4px;padding-right:30px}
-.envio .que{color:var(--tenue);font-size:13px;letter-spacing:.3px;margin:4px 0 22px}
-.envio .campo{margin-bottom:15px}
-.envio .btn{width:100%;text-align:center;margin-top:8px}
-.envio .nota{font-size:12px;color:var(--tenue);margin-top:14px;line-height:1.5}
-@media(max-width:560px){.envio{padding:26px 22px 28px}}
-.btn{display:inline-block;font-size:11.5px;letter-spacing:1.6px;text-transform:uppercase;
+
+/* ── Pagina de gracias ── */
+.gracias h3{font-size:20px;font-weight:800;letter-spacing:-.4px}
+.gracias .forma{margin-top:20px;text-align:left}
+.gracias .campo{margin-bottom:15px}
+.btn{display:inline-block;font-family:inherit;font-size:11.5px;letter-spacing:1.6px;
+  text-transform:uppercase;
   text-decoration:none;padding:10px 20px;border:1px solid var(--tinta);color:var(--tinta);
   background:none;cursor:pointer;transition:background .2s,color .2s}
 .btn:hover{background:var(--tinta);color:#fff}
 .btn.lleno{background:var(--tinta);color:#fff}
 .btn.lleno:hover{background:#333}
+/* Un boton apagado tiene que verse apagado. Si solo deja de responder, el
+   comprador cree que la pagina se rompio. */
+.btn:disabled,.btn[disabled]{opacity:.35;cursor:default;pointer-events:none}
+
+/* Hueco donde Bold dibuja su boton dentro del carrito. Ocupa el ancho entero
+   para que caiga exactamente donde estaba el de Checkout. */
+.pagar-carro:empty{display:none}
+.pagar-carro{display:block;margin-bottom:4px}
+.pagar-carro>*{width:100%}
+
+/* Aviso dentro del carrito: algo se vendio, o el checkout no responde. */
+.panel .nota.aviso{color:var(--rojo);font-weight:500}
+.panel .nota.aviso a{color:var(--rojo)}
 
 /* ── franja de realidad aumentada ── */
 .ar{background:var(--tinta);color:#fff;padding:74px 0}
@@ -405,7 +421,23 @@ footer{border-top:1px solid var(--linea);padding:46px 0 60px;margin-top:20px}
 .lupa .ant{left:8px} .lupa .sig{right:8px}
 .lupa .cerrar:hover,.lupa .pasar:hover{color:#B9B9B9}
 .obra .marco{display:block;cursor:zoom-in}
-@media(max-width:680px){.lupa{padding:56px 12px}.lupa .pasar{font-size:34px;padding:8px}}
+/* En celular las flechas de pasar foto quedaban pegadas al borde, a media
+   altura y encima de la propia imagen: se perdian. Aqui bajan a una fila
+   debajo de la ficha, como dos botones redondos de 52 px, que es tamano de
+   dedo. La imagen cede alto para dejarles sitio. */
+@media(max-width:680px){
+  .lupa{padding:56px 12px 96px}
+  .lupa img{max-height:60vh}
+  .lupa figcaption{margin-top:12px;font-size:12.5px}
+  .lupa .pasar{top:auto;bottom:22px;transform:none;font-size:30px;padding:0;
+    width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.14);
+    display:flex;align-items:center;justify-content:center}
+  .lupa .pasar:active{background:rgba(255,255,255,.26)}
+  .lupa .ant{left:calc(50% - 62px)}
+  .lupa .sig{right:calc(50% - 62px)}
+  .lupa .cerrar{top:10px;right:10px;width:48px;height:48px;padding:0;font-size:30px;
+    display:flex;align-items:center;justify-content:center}
+}
 
 /* ── portada, al estilo de la referencia: titulo, una obra, y ya ── */
 .hero h1{font-style:italic}
@@ -417,4 +449,43 @@ footer{border-top:1px solid var(--linea);padding:46px 0 60px;margin-top:20px}
   .marca{width:36px}
   .barra{padding:0 10px}
   .portada-obra{margin-top:20px}
+}
+
+.fallo{font-size:12px;color:var(--rojo);line-height:1.5}
+
+
+/* ══ LA TIENDA · LAS MEDIAS ══════════════════════════════════════════════
+   Se venden las dos parejas juntas, y cada pareja salio de un cuadro que
+   sigue colgado en el estudio. Por eso la seccion no es una ficha de
+   producto: es la foto del cuadro al lado de la media que salio de el. Sin
+   esa pareja, las medias son merch; con ella, son la obra puesta a andar. */
+section.medias{background:var(--humo);border-top:1px solid var(--linea)}
+.medias-caja{display:grid;grid-template-columns:1fr;gap:34px;align-items:start}
+@media(min-width:900px){.medias-caja{grid-template-columns:1.05fr .95fr;gap:48px}}
+
+/* la ficha del producto reusa .obra tal cual, fuera de la reja de tres */
+.medias-prod .obra .marco{aspect-ratio:4/3;background:var(--papel)}
+
+.medias-origen{background:var(--papel);border:1px solid var(--linea);border-radius:4px;
+  padding:26px 24px 22px}
+.medias-origen h3{font-size:15px;font-weight:700;letter-spacing:-.2px;margin-bottom:18px}
+.medias-origen .par{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;
+  align-items:center;margin-bottom:20px}
+.medias-origen figure{margin:0}
+.medias-origen figure img{width:100%;aspect-ratio:1/1;object-fit:cover;
+  background:var(--humo);border-radius:3px;transition:opacity .2s}
+.medias-origen figure a{display:block}
+.medias-origen figure a:hover img{opacity:.85}
+.medias-origen .nota-origen a{color:var(--coral);text-decoration:underline;
+  text-underline-offset:2px}
+/* la media va contenida y no recortada: es producto, no ambiente */
+.medias-origen .par figure:last-of-type img{object-fit:contain;padding:8px}
+.medias-origen figcaption{font-size:11.5px;letter-spacing:1.4px;text-transform:uppercase;
+  color:var(--tenue);margin-top:8px}
+.medias-origen .flecha{font-size:20px;color:var(--tenue);line-height:1}
+.medias-origen .nota-origen{font-size:13.5px;color:var(--gris);line-height:1.55;
+  border-top:1px solid var(--linea);padding-top:16px;margin-top:4px}
+@media(max-width:560px){
+  .medias-origen .par{grid-template-columns:1fr auto 1fr;gap:9px}
+  .medias-origen figcaption{font-size:10.5px;letter-spacing:1px}
 }

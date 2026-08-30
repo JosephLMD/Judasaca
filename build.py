@@ -80,7 +80,49 @@ OBRAS = [
       tec='Acrylics and spray on canvas',     med='50 × 50 cm', usd=975, buy='', vendida=False),
  dict(slug='city-rounds-icon',     titulo='City Rounds Icon',
       tec='Oil on canvas',                    med='50 × 50 cm', usd=1000, buy='', vendida=False),
+ # ── entradas de agosto de 2026 ──
+ # OJO JUAN: las tecnicas de estas tres las puse yo mirando las fotos.
+ # Si alguna esta mal, se corrige aqui y solo aqui.
+ dict(slug='city-famous-rat',      titulo='City Famous Rat',
+      tec='Acrylics and spray on canvas',     med='175 × 80 cm', usd=2600, buy='', vendida=False,
+      ancha=True),
+ dict(slug='broken-icon',          titulo='Broken Icon',
+      tec='Acrylics and oil stick on canvas', med='100 × 100 cm', usd=1950, buy='', vendida=False),
+ dict(slug='abstract-reality-icon', titulo='Abstract Reality Icon',
+      tec='Oil crayon on paper',              med='35 × 25 cm', usd=600, buy='', vendida=False),
 ]
+
+# ── la tienda ────────────────────────────────────────────────────────────
+# Ocho originales unicos de 45 × 40 y las medias. Van por el mismo Worker que
+# el arte: mismo boton, mismo carrito, misma marca de vendida. La unica
+# diferencia es en que pagina salen.
+#
+# Las ocho son crayon de oleo sobre papel, confirmado por Juan.
+TIENDA = [
+ dict(slug='out-in-the-city-woodstock', titulo='Out in the City, Woodstock',
+      tec='Oil crayon on paper',  med='45 × 40 cm', usd=250, buy='', vendida=False),
+ dict(slug='colour-pop-snoops',    titulo='Colour Pop Snoops',
+      tec='Oil crayon on paper',  med='45 × 40 cm', usd=250, buy='', vendida=False),
+ dict(slug='icon-kiss',            titulo='Icon Kiss',
+      tec='Oil crayon on paper',  med='45 × 40 cm', usd=250, buy='', vendida=False),
+ dict(slug='palometa-tribute',     titulo='Palometa Tribute',
+      tec='Oil crayon on paper',  med='45 × 40 cm', usd=250, buy='', vendida=False),
+ dict(slug='everything-will-be-ok-jules', titulo='Everything Will Be OK, Jules',
+      tec='Oil crayon on paper',  med='45 × 40 cm', usd=250, buy='', vendida=False),
+ dict(slug='woodstocks-on-fire',   titulo='Woodstock’s on Fire',
+      tec='Oil crayon on paper',  med='45 × 40 cm', usd=250, buy='', vendida=False),
+ dict(slug='city-of-rats',         titulo='City of Rats',
+      tec='Oil crayon on paper',  med='45 × 40 cm', usd=250, buy='', vendida=False),
+ dict(slug='out-in-the-beach-rat', titulo='Out in the Beach Rat',
+      tec='Oil crayon on paper',  med='45 × 40 cm', usd=250, buy='', vendida=False),
+]
+
+# Las medias se venden como un solo producto: las dos parejas juntas. Cada
+# pareja sale de un cuadro distinto, y esos dos cuadros se muestran al lado
+# en la pagina. Por eso van aparte y no dentro de TIENDA.
+MEDIAS = dict(slug='judasaca-socks', titulo='JUDASACA Socks',
+              tec='Printed from two original paintings',
+              med='Two pairs', usd=30, buy='', vendida=False)
 
 # ── exposiciones ─────────────────────────────────────────────────────────
 EXPOS = [
@@ -223,10 +265,15 @@ def cabeza(titulo, desc, activa, og='img/oil-city-woodstock-sm.webp'):
 import json
 # Las vendidas quedan fuera del catalogo del carrito. Asi, si alguien tenia una
 # guardada en su navegador de antes, desaparece sola la proxima vez que entre.
+# Arte, tienda y medias comparten carrito: quien se lleva un cuadro de 1.950
+# puede sumarle unas medias de 30 en la misma orden.
+VENDIBLE = OBRAS + TIENDA + [MEDIAS]
+
 CATALOGO = json.dumps({o['slug']: {'t': o['titulo'], 'm': o['med'], 'usd': o['usd']}
-                       for o in OBRAS if not o['vendida']}, ensure_ascii=False)
+                       for o in VENDIBLE if not o['vendida']}, ensure_ascii=False)
 
 DISPONIBLES = sum(1 for o in OBRAS if not o['vendida'])
+EN_TIENDA   = sum(1 for o in TIENDA if not o['vendida'])
 
 PIE = f'''
 <footer>
@@ -561,35 +608,57 @@ window.JUDPAGO = (function(){{
   if (!huecos.length || !window.fetch) return;
 
   var slugs = huecos.map(function(h){{ return h.getAttribute('data-obra'); }});
+  var firmadas = {{}};   // slug -> orden ya firmada por el Worker
 
-  fetch('{FIRMADOR}/firma', {{
-    method: 'POST',
-    headers: {{ 'Content-Type': 'application/json' }},
-    body: JSON.stringify({{ slugs: slugs }})
-  }})
-  .then(function(r){{ return r.json(); }})
-  .then(function(d){{
-    // El Worker manda la lista real de vendidas. Si una se vendio despues de
-    // publicar la pagina, se marca aqui sin tener que reconstruir el sitio.
+  function firmar(lista){{
+    return fetch('{FIRMADOR}/firma', {{
+      method: 'POST',
+      headers: {{ 'Content-Type': 'application/json' }},
+      body: JSON.stringify({{ slugs: lista }})
+    }}).then(function(r){{ return r.json(); }});
+  }}
+
+  /* Precarga. Corre al cargar la pagina y suele llegar antes de que nadie
+     haga clic, asi que el boton abre Bold de una. Si Cloudflare esta frio y
+     tarda, no importa: el boton ya esta pintado y el clic firma solo. */
+  firmar(slugs).then(function(d){{
     if (d && d.vendidas) window.JUDPAGO.marcarVendidas(d.vendidas);
-    if (!d || !d.obras) return;
+    if (d && d.obras) firmadas = d.obras;
+  }}).catch(function(){{ }});
 
-    huecos.forEach(function(hueco){{
-      var o = d.obras[hueco.getAttribute('data-obra')];
-      if (!o) return;
-      o.slugs = [hueco.getAttribute('data-obra')];
-      var b = document.createElement('button');
-      b.className = 'btn lleno';
-      b.textContent = 'Buy';
-      b.addEventListener('click', function(){{
-        b.disabled = true;
-        b.textContent = 'Opening…';
-        window.JUDPAGO.abrir(hueco, o, location.href);
-      }});
-      hueco.appendChild(b);
+  function abrirObra(boton, slug){{
+    var hueco = boton.parentNode;
+    boton.disabled = true;
+    boton.textContent = 'Opening…';
+
+    var orden = firmadas[slug];
+    if (orden) {{
+      orden.slugs = [slug];
+      window.JUDPAGO.abrir(hueco, orden, location.href);
+      return;
+    }}
+    // Todavia no habia llegado la precarga: se firma esta sola y se abre.
+    firmar([slug]).then(function(d){{
+      if (d && d.vendidas) window.JUDPAGO.marcarVendidas(d.vendidas);
+      var o = d && d.obras && d.obras[slug];
+      if (!o) throw new Error('sin-orden');
+      firmadas[slug] = o;
+      o.slugs = [slug];
+      window.JUDPAGO.abrir(hueco, o, location.href);
+    }}).catch(function(){{
+      boton.disabled = false;
+      boton.textContent = 'Buy';
+      hueco.insertAdjacentHTML('beforeend',
+        '<span class="fallo">Could not open checkout. '
+        + 'Write to <a href="mailto:{CORREO}">{CORREO}</a>.</span>');
     }});
-  }})
-  .catch(function(){{ }});
+  }}
+
+  document.addEventListener('click', function(e){{
+    var b = e.target.closest && e.target.closest('.pagar .comprar');
+    if (!b || b.disabled) return;
+    abrirObra(b, b.getAttribute('data-obra'));
+  }});
 }})();
 </script>
 </body>
@@ -598,14 +667,28 @@ window.JUDPAGO = (function(){{
 
 
 def tarjeta_obra(o, mini=True):
-    img = f"img/{o['slug']}-sm.webp" if mini else f"img/{o['slug']}.webp"
+    # La obra panoramica ocupa la fila entera, asi que en pantalla grande se
+    # muestra a mas de 1200 px. La version pequena es de 700 y se veria estirada:
+    # esa se lleva la imagen grande.
+    if o.get('ancha'):
+        img = f"img/{o['slug']}.webp"
+    else:
+        img = f"img/{o['slug']}-sm.webp" if mini else f"img/{o['slug']}.webp"
     # El precio de una obra vendida se sigue mostrando, tachado. Esconderlo
     # obliga a preguntar, y la respuesta ya no le sirve a nadie.
     precio = f'<span class="p">USD {o["usd"]:,}</span>'
     # Hueco donde el JavaScript inserta el boton de Bold una vez el Worker
     # devuelve la firma. Toda obra que no este vendida lo lleva: quien quiere
     # comprar compra, sin pasos de por medio y sin pedir permiso por correo.
-    comprar = '' if o['vendida'] else f'<span class="pagar" data-obra="{o["slug"]}"></span>'
+    # El boton va escrito en el HTML, no lo crea el JavaScript. Antes se creaba
+    # al volver el fetch al Worker, asi que en un arranque en frio de Cloudflare
+    # la obra se quedaba varios segundos sin boton y parecia que no se vendia.
+    # Ahora esta desde el primer pintado; la firma se pide al hacer clic si el
+    # precargado todavia no llego.
+    comprar = ('' if o['vendida'] else
+               f'<span class="pagar" data-obra="{o["slug"]}">'
+               f'<button class="btn lleno comprar" type="button" '
+               f'data-obra="{o["slug"]}">Buy</button></span>')
     carrito = ('' if o['vendida'] else
                f'<button class="btn add" data-slug="{o["slug"]}">Add to cart</button>')
 
@@ -621,10 +704,19 @@ def tarjeta_obra(o, mini=True):
 
     if o.get('recorte'):
         clase_marco += ' recorte'
+    # Una obra panoramica ocupa dos celdas de la reja y su marco deja de ser
+    # cuadrado. Asi se ve a su proporcion, sin franjas de relleno.
+    if o.get('ancha'):
+        clase_obra += ' ancha'
+
+    # 'fondo' quedo de cuando las fichas no eran cuadradas y sobraban franjas.
+    # Hoy no sobra ninguna, pero se deja el mecanismo por si entra una foto
+    # con otra proporcion: si la obra trae fondo, el marco se pinta de ese color.
+    est = f' style="background:{o["fondo"]}"' if o.get('fondo') else ''
 
     return f'''      <article class="obra{clase_obra}">
         <figure>
-          <a class="marco{clase_marco}" href="img/{o['slug']}.webp"
+          <a class="marco{clase_marco}"{est} href="img/{o['slug']}.webp"
              data-lupa data-tit="{html.escape(o['titulo'])}"
              data-fic="{html.escape(o['tec'])} · {o['med']}">
             <img src="{img}" alt="{html.escape(o['titulo'])}, {html.escape(o['tec'].lower())}, {o['med']}" loading="lazy">{sello}
@@ -640,8 +732,16 @@ def tarjeta_obra(o, mini=True):
 
 
 def escribir(nombre, cuerpo):
-    with open(os.path.join(RUTA, nombre), 'w', encoding='utf-8') as f:
+    # Se escribe a un temporal y se renombra encima, en vez de abrir el archivo
+    # final en modo 'w'. Dos razones: en carpetas sincronizadas (iCloud, Drive)
+    # abrir en 'w' un archivo que el sistema tiene tomado revienta con
+    # "Resource deadlock avoided", y ademas asi la escritura es atomica: si el
+    # build falla a medias, nunca queda una pagina cortada en el sitio.
+    ruta = os.path.join(RUTA, nombre)
+    tmp = ruta + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as f:
         f.write(cuerpo)
+    os.replace(tmp, ruta)
     return len(cuerpo)
 
 
@@ -800,26 +900,60 @@ art = cabeza(
 # ══════════════════════════════════════════════════════════════════════════
 # 4 · SHOP
 # ══════════════════════════════════════════════════════════════════════════
+# Las tarjetas se arman con la misma funcion que el arte: mismo boton de Bold,
+# mismo carrito, mismo sello de vendida. La tienda no es un sistema aparte.
+tienda_html = ''.join(tarjeta_obra(o) for o in TIENDA)
+medias_html = tarjeta_obra(MEDIAS)
+
 shop = cabeza(
   'Shop · JUDASACA',
-  'Prints and merchandise by JUDASACA. Coming soon.',
-  'shop.html') + f'''
+  'Original works on paper and JUDASACA socks. Shipped worldwide.',
+  'shop.html', og='img/out-in-the-city-woodstock-sm.webp') + f'''
 <main>
   <section>
     <div class="wrap">
       <div class="tit">
         <div class="eti">Shop</div>
-        <h2>Prints and merch</h2>
-        <p>The originals live on the <a href="art.html" style="color:inherit">Art</a> page.
-          This is where the affordable end of the work will be.</p>
+        <h2>Small originals</h2>
+        <p>Same hand, same rats, smaller paper. Every piece here is a one-off, not a print:
+          when one goes, it is gone. The large canvases live on the
+          <a href="art.html" style="color:inherit">Art</a> page.</p>
       </div>
-      <div class="pronto">
-        <h3>Opening soon</h3>
-        <p>Prints, apparel and small editions are being prepared. If you want to know the
-          moment it opens, write and you will be told first.</p>
-        <p style="margin-top:24px">
-          <a class="btn" href="mailto:{CORREO}?subject=Shop%20—%20let%20me%20know%20when%20it%20opens">Tell me when it opens</a>
-        </p>
+      <div class="obras">
+{tienda_html}      </div>
+    </div>
+  </section>
+
+  <section class="medias">
+    <div class="wrap">
+      <div class="tit">
+        <div class="eti">Wearable</div>
+        <h2>The socks</h2>
+        <p>Two pairs, sold together, in a box built from the same two paintings. Each pair
+          is a painting that already existed, one light and one dark. You are not buying a
+          logo on a sock, you are buying the painting on a sock.</p>
+      </div>
+
+      <div class="medias-caja">
+        <div class="medias-prod">
+{medias_html}        </div>
+
+        <div class="medias-origen">
+          <h3>Where each pair comes from</h3>
+          <div class="par">
+            <figure><img src="img/socks-white-origin-sm.webp" alt="The light painting the white pair was taken from" loading="lazy"><figcaption>In the studio</figcaption></figure>
+            <span class="flecha" aria-hidden="true">&rarr;</span>
+            <figure><img src="img/socks-white-sm.webp" alt="The white pair" loading="lazy"><figcaption>The white pair</figcaption></figure>
+          </div>
+          <div class="par">
+            <figure><a href="art.html"><img src="img/broken-icon-sm.webp" alt="Broken Icon, the painting the black pair was taken from" loading="lazy"></a><figcaption>Broken Icon</figcaption></figure>
+            <span class="flecha" aria-hidden="true">&rarr;</span>
+            <figure><img src="img/socks-black-sm.webp" alt="The black pair" loading="lazy"><figcaption>The black pair</figcaption></figure>
+          </div>
+          <p class="nota-origen">The light painting stays in the studio and is not for sale.
+            The dark one is <a href="art.html">Broken Icon</a>, and that one you can buy.
+            The socks arrive in a box built from both.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -1203,17 +1337,17 @@ if __name__ == '__main__':
         print(f'  {nombre:<14} {n/1024:>6.1f} KB')
 
     # CNAME para GitHub Pages, robots y sitemap
-    open(os.path.join(RUTA, 'CNAME'), 'w').write('judasaca.art\n')
-    open(os.path.join(RUTA, 'robots.txt'), 'w').write(
-        f'User-agent: *\nAllow: /\n\nSitemap: {SITIO}/sitemap.xml\n')
+    escribir('CNAME', 'judasaca.art\n')
+    escribir('robots.txt', f'User-agent: *\nAllow: /\n\nSitemap: {SITIO}/sitemap.xml\n')
     urls = ''.join(
         f'  <url><loc>{SITIO}/{"" if a == "index.html" else a}</loc>'
         f'<priority>{"1.0" if a == "index.html" else "0.8"}</priority></url>\n'
         # privacy.html no esta en PAGINAS porque no va en el menu, pero si debe
         # poder indexarse: es la pagina que alguien busca cuando desconfia.
         for a, _ in PAGINAS + [('privacy.html', 'Privacy')])
-    open(os.path.join(RUTA, 'sitemap.xml'), 'w').write(
-        f'<?xml version="1.0" encoding="UTF-8"?>\n'
-        f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n')
+    escribir('sitemap.xml',
+             f'<?xml version="1.0" encoding="UTF-8"?>\n'
+             f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n')
     print('\n  CNAME · robots.txt · sitemap.xml')
-    print(f'  {len(OBRAS)} obras · {sum(len(i) for _, i in EXPOS)} exposiciones')
+    print(f'  {len(OBRAS)} obras · {len(TIENDA)} en tienda mas las medias · '
+          f'{sum(len(i) for _, i in EXPOS)} exposiciones')

@@ -244,7 +244,7 @@
    No cobra nada todavia: cuando existan los enlaces de pago de Stripe,
    este mismo carrito puede mandar al checkout. */
 (function(){
-  var CAT = {"oil-city-woodstock": {"t": "Oil City Woodstock", "m": "100 × 100 cm", "usd": 1950}, "sunday-snoops": {"t": "Sunday, Snoops", "m": "100 × 100 cm", "usd": 1950}, "mango-og": {"t": "Mango OG", "m": "100 × 100 cm", "usd": 1950}, "original-pastel-disney": {"t": "Original Pastel Disney", "m": "100 × 100 cm", "usd": 1950}, "blue-thoughts-rat": {"t": "Blue Thoughts Rat", "m": "80 cm diameter", "usd": 1235}, "smiling-ratsquiat-blue-crown": {"t": "Smiling Ratsquiat, Blue Crown", "m": "50 × 50 cm", "usd": 975}, "smiling-ratsquiat-yellow-crown": {"t": "Smiling Ratsquiat, Yellow Crown", "m": "50 × 50 cm", "usd": 975}, "oil-woodstock": {"t": "Oil Woodstock", "m": "50 × 50 cm", "usd": 975}, "cloud-city-snoops": {"t": "Cloud City Snoops", "m": "50 × 50 cm", "usd": 1000}, "new-york-street-snoops": {"t": "New York Street Snoops", "m": "50 × 50 cm", "usd": 975}, "city-rounds-icon": {"t": "City Rounds Icon", "m": "50 × 50 cm", "usd": 1000}};
+  var CAT = {"oil-city-woodstock": {"t": "Oil City Woodstock", "m": "100 × 100 cm", "usd": 1950}, "sunday-snoops": {"t": "Sunday, Snoops", "m": "100 × 100 cm", "usd": 1950}, "mango-og": {"t": "Mango OG", "m": "100 × 100 cm", "usd": 1950}, "original-pastel-disney": {"t": "Original Pastel Disney", "m": "100 × 100 cm", "usd": 1950}, "blue-thoughts-rat": {"t": "Blue Thoughts Rat", "m": "80 cm diameter", "usd": 1235}, "smiling-ratsquiat-blue-crown": {"t": "Smiling Ratsquiat, Blue Crown", "m": "50 × 50 cm", "usd": 975}, "smiling-ratsquiat-yellow-crown": {"t": "Smiling Ratsquiat, Yellow Crown", "m": "50 × 50 cm", "usd": 975}, "oil-woodstock": {"t": "Oil Woodstock", "m": "50 × 50 cm", "usd": 975}, "cloud-city-snoops": {"t": "Cloud City Snoops", "m": "50 × 50 cm", "usd": 1000}, "new-york-street-snoops": {"t": "New York Street Snoops", "m": "50 × 50 cm", "usd": 975}, "city-rounds-icon": {"t": "City Rounds Icon", "m": "50 × 50 cm", "usd": 1000}, "city-famous-rat": {"t": "City Famous Rat", "m": "175 × 80 cm", "usd": 2600}, "broken-icon": {"t": "Broken Icon", "m": "100 × 100 cm", "usd": 1950}, "abstract-reality-icon": {"t": "Abstract Reality Icon", "m": "35 × 25 cm", "usd": 600}, "out-in-the-city-woodstock": {"t": "Out in the City, Woodstock", "m": "45 × 40 cm", "usd": 250}, "colour-pop-snoops": {"t": "Colour Pop Snoops", "m": "45 × 40 cm", "usd": 250}, "icon-kiss": {"t": "Icon Kiss", "m": "45 × 40 cm", "usd": 250}, "palometa-tribute": {"t": "Palometa Tribute", "m": "45 × 40 cm", "usd": 250}, "everything-will-be-ok-jules": {"t": "Everything Will Be OK, Jules", "m": "45 × 40 cm", "usd": 250}, "woodstocks-on-fire": {"t": "Woodstock’s on Fire", "m": "45 × 40 cm", "usd": 250}, "city-of-rats": {"t": "City of Rats", "m": "45 × 40 cm", "usd": 250}, "out-in-the-beach-rat": {"t": "Out in the Beach Rat", "m": "45 × 40 cm", "usd": 250}, "judasaca-socks": {"t": "JUDASACA Socks", "m": "Two pairs", "usd": 30}};
   var LLAVE='judasaca-carro';
   var carro=[];
   try{ carro=JSON.parse(localStorage.getItem(LLAVE)||'[]'); }catch(e){ carro=[]; }
@@ -465,35 +465,57 @@ window.JUDPAGO = (function(){
   if (!huecos.length || !window.fetch) return;
 
   var slugs = huecos.map(function(h){ return h.getAttribute('data-obra'); });
+  var firmadas = {};   // slug -> orden ya firmada por el Worker
 
-  fetch('https://judasaca-bold.judasaca-art.workers.dev/firma', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ slugs: slugs })
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(d){
-    // El Worker manda la lista real de vendidas. Si una se vendio despues de
-    // publicar la pagina, se marca aqui sin tener que reconstruir el sitio.
+  function firmar(lista){
+    return fetch('https://judasaca-bold.judasaca-art.workers.dev/firma', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slugs: lista })
+    }).then(function(r){ return r.json(); });
+  }
+
+  /* Precarga. Corre al cargar la pagina y suele llegar antes de que nadie
+     haga clic, asi que el boton abre Bold de una. Si Cloudflare esta frio y
+     tarda, no importa: el boton ya esta pintado y el clic firma solo. */
+  firmar(slugs).then(function(d){
     if (d && d.vendidas) window.JUDPAGO.marcarVendidas(d.vendidas);
-    if (!d || !d.obras) return;
+    if (d && d.obras) firmadas = d.obras;
+  }).catch(function(){ });
 
-    huecos.forEach(function(hueco){
-      var o = d.obras[hueco.getAttribute('data-obra')];
-      if (!o) return;
-      o.slugs = [hueco.getAttribute('data-obra')];
-      var b = document.createElement('button');
-      b.className = 'btn lleno';
-      b.textContent = 'Buy';
-      b.addEventListener('click', function(){
-        b.disabled = true;
-        b.textContent = 'Opening…';
-        window.JUDPAGO.abrir(hueco, o, location.href);
-      });
-      hueco.appendChild(b);
+  function abrirObra(boton, slug){
+    var hueco = boton.parentNode;
+    boton.disabled = true;
+    boton.textContent = 'Opening…';
+
+    var orden = firmadas[slug];
+    if (orden) {
+      orden.slugs = [slug];
+      window.JUDPAGO.abrir(hueco, orden, location.href);
+      return;
+    }
+    // Todavia no habia llegado la precarga: se firma esta sola y se abre.
+    firmar([slug]).then(function(d){
+      if (d && d.vendidas) window.JUDPAGO.marcarVendidas(d.vendidas);
+      var o = d && d.obras && d.obras[slug];
+      if (!o) throw new Error('sin-orden');
+      firmadas[slug] = o;
+      o.slugs = [slug];
+      window.JUDPAGO.abrir(hueco, o, location.href);
+    }).catch(function(){
+      boton.disabled = false;
+      boton.textContent = 'Buy';
+      hueco.insertAdjacentHTML('beforeend',
+        '<span class="fallo">Could not open checkout. '
+        + 'Write to <a href="mailto:contact@judasaca.art">contact@judasaca.art</a>.</span>');
     });
-  })
-  .catch(function(){ });
+  }
+
+  document.addEventListener('click', function(e){
+    var b = e.target.closest && e.target.closest('.pagar .comprar');
+    if (!b || b.disabled) return;
+    abrirObra(b, b.getAttribute('data-obra'));
+  });
 })();
 </script>
 </body>
