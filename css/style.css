@@ -113,11 +113,13 @@ section.humo{background:var(--humo)}
 
 /* ── rejilla de obras ── */
 .obras{display:grid;grid-template-columns:repeat(3,1fr);gap:38px 30px}
-.obra figure{margin:0}
+.obra{display:flex;flex-direction:column;height:100%}
+.obra figure{margin:0;display:flex;flex-direction:column;flex:1}
+.obra figcaption{display:flex;flex-direction:column;flex:1}
 /* Las fichas de la reja ya vienen cuadradas y centradas en la obra desde
    recortar.py, asi que aqui basta con que llenen el marco. No se recorta
    nada: la imagen y el marco tienen la misma proporcion. */
-.obra .marco{background:var(--humo);overflow:hidden;
+.obra .marco{background:var(--humo);overflow:hidden;flex:none;
   aspect-ratio:1/1;display:block;padding:0}
 .obra img{width:100%;height:100%;max-width:none;max-height:none;object-fit:contain;
   transition:transform .6s cubic-bezier(.2,.6,.2,1)}
@@ -127,6 +129,8 @@ section.humo{background:var(--humo)}
 .obra.ancha{grid-column:1 / -1}
 .obra.ancha .marco{aspect-ratio:2/1}
 .obra figcaption{padding-top:15px;text-align:center}
+/* Los botones se van al fondo de la tarjeta, pase lo que pase encima. */
+.obra .acciones{margin-top:auto;padding-top:13px}
 .obra .linea{font-size:14px;line-height:1.5}
 .obra .linea .t{font-weight:600}
 .obra .linea .f{color:var(--tenue)}
@@ -163,6 +167,9 @@ section.humo{background:var(--humo)}
 /* Obra redonda dentro de marco cuadrado: llena y se recorta arriba y abajo. */
 .obra .marco.recorte img{width:100%;height:100%;object-fit:cover;max-height:none}
 .acciones{display:flex;gap:10px;margin-top:13px;flex-wrap:wrap;justify-content:center;align-items:center}
+/* Los dos botones miden lo mismo aunque el texto no: "Buy" es mucho mas corto
+   que "Add to cart" y quedaban descuadrados uno al lado del otro. */
+.acciones .btn{min-height:38px;display:inline-flex;align-items:center;justify-content:center}
 /* El hueco del boton de Bold: sin alto propio mientras esta vacio, para que no
    deje un espacio raro si el Worker no contesta. */
 .pagar{display:inline-flex;align-items:center;line-height:0}
@@ -403,7 +410,6 @@ footer{border-top:1px solid var(--linea);padding:46px 0 60px;margin-top:20px}
   .wrap{padding:0 20px}
   .barra{padding:15px 20px}
   .obras{grid-template-columns:repeat(2,1fr);gap:26px 14px}
-  .obra .marco{padding:12px}
   .obra .linea{font-size:12.5px;line-height:1.45;display:flex;flex-direction:column;
     align-items:center;gap:3px}
   .obra .linea .t{font-size:14px;font-weight:700}

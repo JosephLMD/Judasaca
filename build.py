@@ -10,7 +10,7 @@ las paginas: no hay forma de que una quede desactualizada.
 Para marcar una obra como vendida: pon vendida=True. Toda obra que no este
 vendida lleva boton de compra; el precio lo decide el Worker, no esta pagina.
 """
-import os, re, html
+import os, re, html, hashlib
 
 RUTA = os.path.dirname(os.path.abspath(__file__))
 SITIO = 'https://judasaca.art'
@@ -676,17 +676,35 @@ window.JUDPAGO = (function(){{
 '''
 
 
+def ver(ruta):
+    """Le pega a la imagen una firma corta de su propio contenido.
+
+    El problema: cuando se cambia una foto sin cambiarle el nombre, el
+    navegador sigue mostrando la vieja porque cree que ya la tiene. Con la
+    firma detras, cambiar la foto cambia la direccion, y el navegador la pide
+    de nuevo sola. Si la foto no cambia, la firma tampoco y se sigue
+    aprovechando la copia guardada, que es justo lo que uno quiere.
+    """
+    entera = os.path.join(RUTA, ruta)
+    if not os.path.exists(entera):
+        return ruta
+    with open(entera, 'rb') as fh:
+        firma = hashlib.sha1(fh.read()).hexdigest()[:8]
+    return f'{ruta}?v={firma}'
+
+
 def tarjeta_obra(o, mini=True):
     # La obra panoramica ocupa la fila entera, asi que en pantalla grande se
     # muestra a mas de 1200 px. La version pequena es de 700 y se veria estirada:
     # esa se lleva la imagen grande.
     if o.get('ancha'):
-        img = f"img/{o['slug']}.webp"
+        img = ver(f"img/{o['slug']}.webp")
     else:
-        img = f"img/{o['slug']}-sm.webp" if mini else f"img/{o['slug']}.webp"
-    # El precio de una obra vendida se sigue mostrando, tachado. Esconderlo
-    # obliga a preguntar, y la respuesta ya no le sirve a nadie.
-    precio = f'<span class="p">USD {o["usd"]:,}</span>'
+        img = ver(f"img/{o['slug']}-sm.webp") if mini else ver(f"img/{o['slug']}.webp")
+    # Una obra vendida ya no lleva precio. Lo pidieron asi y tiene sentido:
+    # el precio de algo que no se puede comprar solo invita a preguntar por
+    # que, y a comparar la obra que uno si puede comprar contra una que no.
+    precio = '' if o['vendida'] else f'<span class="p">USD {o["usd"]:,}</span>'
     # Hueco donde el JavaScript inserta el boton de Bold una vez el Worker
     # devuelve la firma. Toda obra que no este vendida lo lleva: quien quiere
     # comprar compra, sin pasos de por medio y sin pedir permiso por correo.
@@ -731,7 +749,7 @@ def tarjeta_obra(o, mini=True):
 
     return f'''      <article class="obra{clase_obra}">
         <figure>
-          <a class="marco{clase_marco}"{est} href="img/{o['slug']}.webp"
+          <a class="marco{clase_marco}"{est} href="{ver(f"img/{o['slug']}.webp")}"
              data-lupa data-tit="{html.escape(o['titulo'])}"
              data-fic="{html.escape(o['tec'])} · {o['med']}">
             <img src="{img}" alt="{html.escape(o['titulo'])}, {html.escape(o['tec'].lower())}, {o['med']}" loading="lazy">{sello}
@@ -744,6 +762,21 @@ def tarjeta_obra(o, mini=True):
         </figure>
       </article>
 '''
+
+
+def tira(slugs, destino, fuente):
+    """Tres miniaturas que llevan a la otra pagina.
+
+    Lo estrenamos en la tienda para mandar a la pagina de arte y funciono, asi
+    que la pagina de arte tambien manda a la tienda. Una imagen invita a
+    entrar; un enlace de texto se ignora.
+    """
+    por_slug = {o['slug']: o for o in fuente}
+    return ''.join(
+        f'''          <a class="lienzo" href="{destino}">
+            <img src="{ver(f"img/{s}-sm.webp")}" alt="{html.escape(por_slug[s]["titulo"])}" loading="lazy">
+          </a>
+''' for s in slugs if s in por_slug)
 
 
 def escribir(nombre, cuerpo):
@@ -894,6 +927,18 @@ art = cabeza(
   </section>
 
   <section class="humo">
+    <div class="wrap">
+      <div class="tit">
+        <div class="eti">Smaller work</div>
+        <h2>Shop</h2>
+      </div>
+      <div class="lienzos">
+{tira(['judasaca-socks', 'woodstocks-on-fire', 'out-in-the-beach-rat'], 'shop.html', TIENDA + [MEDIAS])}      </div>
+      <p style="margin-top:26px"><a class="btn" href="shop.html">See the shop</a></p>
+    </div>
+  </section>
+
+  <section>
     <div class="wrap estrecho prosa">
       <div class="tit"><div class="eti">Buying</div><h2>How it works</h2></div>
       <p>Works ship worldwide from Bogotá. Larger canvases usually travel rolled in a
@@ -921,13 +966,8 @@ tienda_html = ''.join(tarjeta_obra(o) for o in TIENDA)
 medias_html = tarjeta_obra(MEDIAS)
 
 # Tres lienzos de muestra para el bloque que lleva a la pagina de arte.
-MUESTRA = ['rendered-reality', 'oil-city-woodstock', 'city-famous-rat']
-_por_slug = {o['slug']: o for o in OBRAS}
-muestra_html = ''.join(
-    f'''          <a class="lienzo" href="art.html">
-            <img src="img/{s}-sm.webp" alt="{html.escape(_por_slug[s]["titulo"])}" loading="lazy">
-          </a>
-''' for s in MUESTRA if s in _por_slug)
+muestra_html = tira(['rendered-reality', 'oil-city-woodstock', 'city-famous-rat'],
+                    'art.html', OBRAS)
 
 shop = cabeza(
   'Shop · JUDASACA',
