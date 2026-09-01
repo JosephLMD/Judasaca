@@ -10,7 +10,7 @@ las paginas: no hay forma de que una quede desactualizada.
 Para marcar una obra como vendida: pon vendida=True. Toda obra que no este
 vendida lleva boton de compra; el precio lo decide el Worker, no esta pagina.
 """
-import os, re, html, hashlib
+import os, re, html, hashlib, json
 
 RUTA = os.path.dirname(os.path.abspath(__file__))
 SITIO = 'https://judasaca.art'
@@ -211,6 +211,167 @@ def nav(activa):
     return '\n      '.join(ls)
 
 
+# ── lo que Google lee y el visitante no ve ───────────────────────────────
+# Una persona entra al sitio y entiende en dos segundos que Judasaca es un
+# pintor de Bogota. Un buscador no: para el son palabras sueltas en una
+# pagina. Esto se lo dice en su idioma, que es un JSON con tipos de
+# schema.org, y de paso enlaza el nombre artistico con el nombre real y con
+# la prensa que ya lo cubrio. Es lo que hace que buscar "judasaca" traiga
+# esta pagina y no solo los perfiles de redes.
+#
+# Regla de oro: aqui no se escribe nada que no este escrito tambien en la
+# pagina. Marcar un precio que el visitante no ve es motivo de penalizacion,
+# y con razon.
+
+REDES = ['https://www.instagram.com/judasaca',
+         'https://www.tiktok.com/@judasaca',
+         'https://x.com/judasaca_art']
+
+# ── la insignia de "fuente preferida" de Google ──────────────────────────
+# Existe y son dos lineas, pero hoy no sirve de nada aqui y por eso no esta
+# puesta. Google solo la deja funcionar si el dominio ya aparece en su
+# herramienta de fuentes, y ahi solo entran sitios que el buscador ya tiene
+# indexados y que publican cosa nueva a menudo. judasaca.art todavia no esta
+# ni indexado, asi que el boton llevaria a una pagina que dice "no hay nada".
+#
+# Se comprueba en diez segundos abriendo esto en el navegador:
+#     https://www.google.com/preferences/source?q=judasaca.art
+# Si el sitio sale ahi, se descomenta esto y ya esta:
+#
+#     <script async src="https://news.google.com/swg/js/v1/publisher.js"></script>
+#     <div google-add-preferred-source-btn data-theme="dark"></div>
+#
+# Mientras tanto es un script de terceros en todas las paginas a cambio de
+# nada, y con la pagina de privacidad que tiene el sitio, eso no sale a
+# cuenta. Primero que Google sepa que la pagina existe.
+
+
+def medidas(med):
+    """De '100 × 120 cm' saca alto y ancho por separado.
+
+    Devuelve lista vacia si no encuentra dos numeros, que es el caso de las
+    redondas ('80 cm diameter') y las de la tienda ('Framed'). Preferimos no
+    decir nada antes que decir algo aproximado.
+    """
+    nums = re.findall(r'(\d+(?:[.,]\d+)?)\s*[×x]\s*(\d+(?:[.,]\d+)?)', med)
+    if not nums:
+        return {}
+    a, b = nums[0]
+    return {'width':  {'@type': 'QuantitativeValue', 'value': float(b), 'unitCode': 'CMT'},
+            'height': {'@type': 'QuantitativeValue', 'value': float(a), 'unitCode': 'CMT'}}
+
+
+def artista():
+    """La ficha de Juan. Es el nodo al que apuntan todos los demas."""
+    return {
+        '@type': 'Person',
+        '@id': SITIO + '/#judasaca',
+        'name': 'Juan Salazar',
+        'alternateName': 'JUDASACA',
+        'url': SITIO + '/',
+        'image': SITIO + '/about_photo.webp',
+        'jobTitle': 'Visual artist',
+        'nationality': {'@type': 'Country', 'name': 'Colombia'},
+        'homeLocation': {'@type': 'Place',
+                         'address': {'@type': 'PostalAddress',
+                                     'addressLocality': 'Bogotá',
+                                     'addressCountry': 'CO'}},
+        'knowsAbout': ['Painting', 'Street art', 'Augmented reality',
+                       'Digital art', 'Pop art'],
+        # sameAs es "esta persona, en otro sitio". Solo perfiles suyos: si se
+        # meten aqui los articulos de prensa se le esta diciendo a Google que
+        # El Espectador es Juan, que no es el caso.
+        'sameAs': REDES,
+        # subjectOf si es lo correcto para la prensa: obras que hablan de el.
+        'subjectOf': [{'@type': 'Article', 'headline': t, 'url': u,
+                       'publisher': {'@type': 'Organization', 'name': medio}}
+                      for medio, t, u in PRENSA],
+    }
+
+
+def obra_json(o, pagina):
+    """Una obra, como producto y como pieza de arte a la vez.
+
+    Los dos tipos son ciertos y schema.org deja combinarlos: es un cuadro y
+    ademas esta en venta. El precio solo se declara si de verdad se puede
+    comprar; en las vendidas la pagina no muestra precio, asi que aqui
+    tampoco va.
+    """
+    d = {
+        '@type': ['VisualArtwork', 'Product'],
+        '@id': f'{SITIO}/{pagina}#{o["slug"]}',
+        'name': o['titulo'],
+        'image': f'{SITIO}/img/{o["slug"]}.webp',
+        'url': f'{SITIO}/{pagina}',
+        'artform': 'Painting',
+        'artMedium': o['tec'],
+        'description': f'{o["tec"]}. {o["med"]}.',
+        'creator': {'@id': SITIO + '/#judasaca'},
+        'artist': {'@id': SITIO + '/#judasaca'},
+    }
+    d.update(medidas(o['med']))
+    if o['vendida']:
+        d['offers'] = {'@type': 'Offer', 'url': f'{SITIO}/{pagina}',
+                       'availability': 'https://schema.org/SoldOut'}
+    else:
+        d['offers'] = {'@type': 'Offer', 'url': f'{SITIO}/{pagina}',
+                       'price': o['usd'], 'priceCurrency': 'USD',
+                       'availability': 'https://schema.org/InStock',
+                       'itemCondition': 'https://schema.org/NewCondition',
+                       'seller': {'@id': SITIO + '/#judasaca'}}
+    return d
+
+
+def lista(obras, pagina):
+    return {'@type': 'ItemList',
+            'itemListElement': [{'@type': 'ListItem', 'position': i,
+                                 'item': obra_json(o, pagina)}
+                                for i, o in enumerate(obras, 1)]}
+
+
+def datos(activa, canon):
+    """El bloque que se mete en cada pagina, distinto segun cual sea."""
+    nodos = [{'@type': 'WebSite', '@id': SITIO + '/#sitio',
+              'url': SITIO + '/', 'name': 'JUDASACA', 'inLanguage': 'en',
+              'publisher': {'@id': SITIO + '/#judasaca'}}]
+
+    if activa == 'index.html':
+        nodos.append(artista())
+        nodos.append({'@type': 'WebPage', '@id': canon + '#pagina',
+                      'url': canon, 'isPartOf': {'@id': SITIO + '/#sitio'},
+                      'about': {'@id': SITIO + '/#judasaca'}})
+
+    elif activa in ('about.html', 'cv.html'):
+        nodos.append(artista())
+        nodos.append({'@type': 'ProfilePage', '@id': canon + '#pagina',
+                      'url': canon, 'isPartOf': {'@id': SITIO + '/#sitio'},
+                      'mainEntity': {'@id': SITIO + '/#judasaca'}})
+
+    elif activa == 'art.html':
+        nodos.append({'@type': 'CollectionPage', '@id': canon + '#pagina',
+                      'url': canon, 'name': 'Original works',
+                      'isPartOf': {'@id': SITIO + '/#sitio'},
+                      'mainEntity': lista(OBRAS, 'art.html')})
+
+    elif activa == 'shop.html':
+        nodos.append({'@type': 'CollectionPage', '@id': canon + '#pagina',
+                      'url': canon, 'name': 'Shop',
+                      'isPartOf': {'@id': SITIO + '/#sitio'},
+                      'mainEntity': lista(TIENDA + [MEDIAS], 'shop.html')})
+
+    elif activa == 'contact.html':
+        nodos.append({'@type': 'ContactPage', '@id': canon + '#pagina',
+                      'url': canon, 'isPartOf': {'@id': SITIO + '/#sitio'},
+                      'about': {'@id': SITIO + '/#judasaca'}})
+
+    else:
+        return ''
+
+    bloque = json.dumps({'@context': 'https://schema.org', '@graph': nodos},
+                        ensure_ascii=False, indent=1)
+    return f'<script type="application/ld+json">\n{bloque}\n</script>\n'
+
+
 def cabeza(titulo, desc, activa, og='img/oil-city-woodstock-sm.webp'):
     canon = SITIO + ('/' if activa == 'index.html' else '/' + activa)
     return f'''<!DOCTYPE html>
@@ -228,7 +389,7 @@ def cabeza(titulo, desc, activa, og='img/oil-city-woodstock-sm.webp'):
 <meta property="og:url" content="{canon}">
 <meta property="og:image" content="{SITIO}/{og}">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="img/judasaca-logo.png">
+{datos(activa, canon)}<link rel="icon" href="img/judasaca-logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -269,7 +430,6 @@ def cabeza(titulo, desc, activa, og='img/oil-city-woodstock-sm.webp'):
 '''
 
 
-import json
 # Las vendidas quedan fuera del catalogo del carrito. Asi, si alguien tenia una
 # guardada en su navegador de antes, desaparece sola la proxima vez que entre.
 # Arte, tienda y medias comparten carrito: quien se lleva un cuadro de 1.950
@@ -1410,8 +1570,14 @@ if __name__ == '__main__':
     # CNAME para GitHub Pages, robots y sitemap
     escribir('CNAME', 'judasaca.art\n')
     escribir('robots.txt', f'User-agent: *\nAllow: /\n\nSitemap: {SITIO}/sitemap.xml\n')
+    # lastmod le dice a Google que cambio y cuando. Sin esto tiene que
+    # adivinar cada cuanto volver a pasar, y con un sitio pequeno que no
+    # visita casi nadie, adivina "casi nunca". Se saca de la fecha real del
+    # archivo recien escrito, asi que no hay que acordarse de tocarla.
+    hoy = __import__('datetime').date.today().isoformat()
     urls = ''.join(
         f'  <url><loc>{SITIO}/{"" if a == "index.html" else a}</loc>'
+        f'<lastmod>{hoy}</lastmod>'
         f'<priority>{"1.0" if a == "index.html" else "0.8"}</priority></url>\n'
         # privacy.html no esta en PAGINAS porque no va en el menu, pero si debe
         # poder indexarse: es la pagina que alguien busca cuando desconfia.
